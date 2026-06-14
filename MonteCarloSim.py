@@ -7,9 +7,12 @@
 import random
 import pandas as pd
 
-number_of_games = 1_000_000
+number_of_games = 100_000
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
 download = False
+
+def clamp(value, min_val, max_val):
+    return max(min_val, min(value, max_val))
 
 if download:
     sheet_id = "1y_pGNGqghla6DfOW5DVMdima_WDhQ3QxvIgioDkcWRg"
@@ -85,22 +88,41 @@ else:
     netzbezug_final_df = pd.read_pickle("netzbezug_final.pkl")
 
 
-# Aus dem Excel!
-board = {"budget" : 4, "bau_em_start_index" : 5, "bau_emissionen" : [-5,-4,-3,-2,-1,0,1,2,3,4,5],
-         "WS_max" : 9, "tech_count" : 5, "wp_eff_count" : 5, "heiz_siegpunkte" : [[]], "heiz_kosten" : [[]],
-         "wp_eff_netzbezug" : [[]], "bedarf_start_index" : 1, "bedarf_netzbezug" : [9,8,7,6,5,4,3,2,1,0],
-         "strom_prod_netzbezug" : [0,0,-1,-1,-2,-2,-3,-3,-4,-4], "speicher_prod_netzbezug" : [0,-1,-1],
-         "zuf_start_index" : 5, "zufriedenheit_budget" : [2,3,3,4,4,5,5,6,6,7], "netzbezug_budget" : [0,"bis",20],
-         "netzbezug_sp_runde" : [[]], "start_sp" : 0, "max_runden" : 4}
+# MAGIC NUMBER: StartBudget (4)
+bau_em_row = base_board_df.loc[base_board_df['Wert'] == "Bauliche Emissionen"]
+bedarf_row = base_board_df.loc[base_board_df['Wert'] == "Strombedarf"]
+prod_row = base_board_df.loc[base_board_df['Wert'] == "Stromproduktion"]
+speicher_row = base_board_df.loc[base_board_df['Wert'] == "Stromspeicher"]
+zuf_row = base_board_df.loc[base_board_df['Wert'] == "Zufriedenheit"]
+
+board = {"budget" : 4,
+         "bau_em_start_index" : int(bau_em_row['Start (0-basiert)'].iloc[0]),
+         "bau_emissionen" : bau_em_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
+         "bedarf_start_index": int(bedarf_row['Start (0-basiert)'].iloc[0]),
+         "bedarf_netzbezug": bedarf_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
+         "strom_prod_start": int(prod_row['Start (0-basiert)'].iloc[0]),
+         "strom_prod_netzbezug": prod_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
+         "speicher_start": int(speicher_row['Start (0-basiert)'].iloc[0]),
+         "speicher_prod_netzbezug": speicher_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
+         "zuf_start_index" : int(zuf_row['Start (0-basiert)'].iloc[0]),
+         "zufriedenheit_budget" : zuf_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
+         "heiz_siegpunkte" : heiz_sp_df.values.transpose().tolist(), "heiz_kosten" : heiz_budget_df.values.transpose().tolist(),
+         "wp_eff_netzbezug" : wp_netzbezug_df.values.transpose().tolist(),
+         "netzbezug_budget" : netzbezug_final_df['Budget'].tolist(),
+         "netzbezug_sp_runde" : netzbezug_final_df[['SP Runde 1', 'SP Runde 2', 'SP Runde 3', 'SP Runde 4']].values.transpose().tolist(),
+         "start_sp" : 0, "max_runden" : 4}
+
 
 slots = card_df['Slot/Stapel'].unique()
 single_slots = [slot for slot in slots if not slot.startswith("*")]
 
+game_master_list = []
 
 for uid in range(number_of_games):
     game_state = {"budget": board["budget"], "bau_em": board["bau_em_start_index"], "runde": 1, "game_id": uid,
                   "wae_schu": 0, "wae_tech": 0, "wp_eff": -1, "bedarf": board["bedarf_start_index"],
-                  "strom_prod": 0, "speicher": 0, "zufriedenheit": board["zuf_start_index"], "sp": board["start_sp"],
+                  "strom_prod": board["strom_prod_start"], "speicher": board["speicher_start"],
+                  "zufriedenheit": board["zuf_start_index"], "sp": board["start_sp"],
                   "decisions" : [], "slots" : [-1] * len(single_slots), "occupied" : []}
     # decisions will be list of strings with game moves
     # slots will be holding card_ids of cards in slots that are single use
@@ -127,8 +149,8 @@ for uid in range(number_of_games):
                 break
             # Wenn ja einbauen, Werte anpassen, zurück zum Anfang
             game_state["decisions"].append(f"Installiert {chosen_card['Name']}")
-            game_state["occupied"].append(chosen_card['Slot/Stapel'])
             if chosen_card['Slot/Stapel'] in single_slots:
+                game_state["occupied"].append(chosen_card['Slot/Stapel'])
                 game_state["slots"][single_slots.index(chosen_card['Slot/Stapel'])] = chosen_card['id']
 
 
@@ -140,28 +162,35 @@ for uid in range(number_of_games):
             game_state["wae_schu"] += chosen_card['Wärmeschutz']
             game_state["wp_eff"] += chosen_card['Wärmepumpen-Effizienz']
             game_state["zufriedenheit"] += chosen_card['Zufriedenheit']
-            if len(chosen_card['Heizsystem']) > 0:
+            if not pd.isna(chosen_card['Heizsystem']):
                 game_state["wae_tech"] = mapping_heizsysteme[chosen_card['Heizsystem']]
 
 
         ######### WERTUNG #########
 
         # Bauliche Emissionen:
-        game_state["sp"] += board["bau_emissionen"][game_state["bau_em"]]
+        game_state["sp"] += board["bau_emissionen"][clamp(game_state["bau_em"], 0, 9)]
         # Heizenergie
-        game_state["sp"] += board["heiz_siegpunkte"][game_state["wae_schu"]][game_state["wae_tech"]]
-        game_state["budget"] += board["heiz_kosten"][game_state["wae_schu"]][game_state["wae_tech"]]
-        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][game_state["wae_schu"]][game_state["wp_eff"]]
+        game_state["sp"] += board["heiz_siegpunkte"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
+        game_state["budget"] += board["heiz_kosten"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
+        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][clamp(game_state["wp_eff"], 0, 4)][clamp(game_state["wae_schu"], 0, 9)]
         # Strombedarf
-        game_state["netzbezug"] += board["bedarf_netzbezug"][game_state["bedarf"]]
+        game_state["netzbezug"] += board["bedarf_netzbezug"][clamp(game_state["bedarf"], 0, 9)]
         # Stromproduktion
-        game_state["netzbezug"] += board["strom_prod_netzbezug"][game_state["strom_prod"]]
+        game_state["netzbezug"] += board["strom_prod_netzbezug"][clamp(game_state["strom_prod"], 0, 9)]
         # Stromspeicher
-        game_state["netzbezug"] += board["speicher_prod_netzbezug"][min(game_state["strom_prod"], game_state["speicher"])]
+        game_state["netzbezug"] += board["speicher_prod_netzbezug"][clamp(min(game_state["strom_prod"], game_state["speicher"]), 0, 9)]
         # Zufriedenheit
-        game_state["budget"] += board["zufriedenheit_budget"][game_state["zufriedenheit"]]
+        game_state["budget"] += board["zufriedenheit_budget"][clamp(game_state["zufriedenheit"], 0, 9)]
         # Netzbezug auswerten
-        game_state["budget"] += board["netzbezug_budget"][game_state["netzbezug"]]
-        game_state["sp"] += board["netzbezug_sp_runde"][game_state["netzbezug"]][game_state["runde"]]
+        game_state["budget"] += board["netzbezug_budget"][clamp(game_state["netzbezug"], 0, 20)]
+        game_state["sp"] += board["netzbezug_sp_runde"][game_state["runde"]][clamp(game_state["netzbezug"], 0, 20)]
+
+        game_master_list.append(game_state)
 
         game_state["runde"] += 1
+    if uid % 1000 == 0:
+        print(uid)
+
+game_history_df = pd.DataFrame(game_master_list)
+game_history_df.to_parquet("History.parquet")
