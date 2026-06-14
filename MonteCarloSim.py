@@ -7,9 +7,9 @@
 import random
 import pandas as pd
 
-number_of_games = 10_000
+number_of_games = 1_000_000
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
-download = False
+download = True
 
 def clamp(value, min_val, max_val):
     return max(min_val, min(value, max_val))
@@ -96,6 +96,8 @@ speicher_row = base_board_df.loc[base_board_df['Wert'] == "Stromspeicher"]
 zuf_row = base_board_df.loc[base_board_df['Wert'] == "Zufriedenheit"]
 
 board = {"budget" : 4,
+         "start_sp" : 0, 
+         "max_runden" : 4,
          "bau_em_start_index" : int(bau_em_row['Start (0-basiert)'].iloc[0]),
          "bau_emissionen" : bau_em_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
          "bedarf_start_index": int(bedarf_row['Start (0-basiert)'].iloc[0]),
@@ -110,20 +112,43 @@ board = {"budget" : 4,
          "wp_eff_netzbezug" : wp_netzbezug_df.values.transpose().tolist(),
          "netzbezug_budget" : netzbezug_final_df['Budget'].tolist(),
          "netzbezug_sp_runde" : netzbezug_final_df[['SP Runde 1', 'SP Runde 2', 'SP Runde 3', 'SP Runde 4']].values.transpose().tolist(),
-         "start_sp" : 0, "max_runden" : 4}
+         }
 
 
 slots = card_df['Slot/Stapel'].unique()
 single_slots = [slot for slot in slots if not slot.startswith("*")]
 
+cards_by_slot = {
+    slot: group.to_dict("records")
+    for slot, group in card_df.groupby("Slot/Stapel", sort=False)
+}
+
+slot_to_index = {
+    slot: index
+    for index, slot in enumerate(single_slots)
+}
+
 game_master_list = []
 
 for uid in range(number_of_games):
-    game_state = {"budget": board["budget"], "bau_em": board["bau_em_start_index"], "runde": 1, "game_id": uid,
-                  "wae_schu": 0, "wae_tech": 0, "wp_eff": -1, "bedarf": board["bedarf_start_index"],
-                  "strom_prod": board["strom_prod_start"], "speicher": board["speicher_start"],
-                  "zufriedenheit": board["zuf_start_index"], "sp": board["start_sp"],
-                  "decisions" : [], "slots" : [-1] * len(single_slots), "occupied" : []}
+    game_state = {"budget": board["budget"], 
+                  "bau_em": board["bau_em_start_index"], 
+                  "runde": 1,
+                  "game_id": uid,
+                  "wae_schu": 0, 
+                  "wae_tech": 0, 
+                  "wp_eff": -1, 
+                  "bedarf": board["bedarf_start_index"],
+                  "strom_prod": board["strom_prod_start"], 
+                  "speicher": board["speicher_start"],
+                  "zufriedenheit": board["zuf_start_index"], 
+                  "sp": board["start_sp"],
+                  "slots" : [-1] * len(single_slots), 
+                  "occupied" : set(),
+                  "played_cards": set(),
+                  "played_cards_log": [],
+                  "round_end_reason": None,
+                  }
     # decisions will be list of strings with game moves
     # slots will be holding card_ids of cards in slots that are single use
     # occupied holds list of (single use) slot names which are in use
@@ -134,24 +159,63 @@ for uid in range(number_of_games):
              "min_netz": len(board["netzbezug_budget"]), "max_netz": 0, "min_zuf": game_state["zufriedenheit"],
              "max_zuf": game_state["zufriedenheit"]}
     '''
-    while game_state["runde"] < board["max_runden"]:
+    while game_state["runde"] <= board["max_runden"]:
         while True:
             ######### SPIELZUG #########
-            # zufälligen Stapel auswählen -> Was ist mit schon gefüllten? Noch nichts
-            chosen_slot = random.choice([slot for slot in slots if slot not in game_state["occupied"]])
-            # zufällige Karte aus dem Stapel auswählen
-            chosen_card = card_df.loc[card_df['Slot/Stapel'] == chosen_slot].sample().iloc[0]
-
-            # Prüfen ob Karte bezahlbar ist
-            if chosen_card['Kosten'] > game_state["budget"]:
-                # wenn nein -> Schlusswertung
-                game_state["decisions"].append("Gepasst")
+            # Verfügbare Kartenstapel ermitteln
+            available_slots = [
+                slot for slot in slots
+                if slot not in game_state["occupied"] # nur aus noch nicht belegten slots
+                and any(
+                    card["id"] not in game_state["played_cards"] # falls in dem stapel noch karten sind, die noch nicht gespielt wurden
+                    for card in cards_by_slot[slot]
+                )
+            ]
+            if not available_slots:
+                game_state["round_end_reason"] = "no_available_slots"
                 break
-            # Wenn ja einbauen, Werte anpassen, zurück zum Anfang
-            game_state["decisions"].append(f"Installiert {chosen_card['Name']}")
+            
+            # Kartenstapel wählen
+            chosen_slot = random.choice(available_slots)
+
+            # Noch nicht gespielte Karten dieses Stapels
+            unplayed_cards = [
+                card
+                for card in cards_by_slot[chosen_slot]
+                if card["id"] not in game_state["played_cards"]
+            ]
+
+            # Drei Karten ziehen, oder alle verbleibenden, falls weniger als drei vorhanden sind
+            drawn_cards = random.sample(
+                unplayed_cards,
+                k=min(3, len(unplayed_cards))
+            )
+
+            # Nur leistbare Karten aus den drei gezogenen Karten
+            affordable_cards = [
+                card
+                for card in drawn_cards
+                if card["Kosten"] <= game_state["budget"]
+            ]
+
+            # Keine der gezogenen Karten ist leistbar: Schlusswertung
+            if not affordable_cards:
+                game_state["round_end_reason"] = "no_affordable_drawn_cards"
+                break
+
+            # Eine leistbare Karte auswählen und spielen
+            chosen_card = random.choice(affordable_cards)
+
+            # Werte anpassen, zurück zum Anfang
+            game_state["played_cards"].add(chosen_card["id"])
+            game_state["played_cards_log"].append({
+                "runde": game_state["runde"],
+                "card_id": chosen_card["id"],
+            })
+
             if chosen_card['Slot/Stapel'] in single_slots:
-                game_state["occupied"].append(chosen_card['Slot/Stapel'])
-                game_state["slots"][single_slots.index(chosen_card['Slot/Stapel'])] = chosen_card['id']
+                game_state["occupied"].add(chosen_slot)
+                game_state["slots"][slot_to_index[chosen_slot]] = chosen_card["id"]
 
 
             game_state["budget"] -= chosen_card['Kosten']
@@ -184,13 +248,19 @@ for uid in range(number_of_games):
         game_state["budget"] += board["zufriedenheit_budget"][clamp(game_state["zufriedenheit"], 0, 9)]
         # Netzbezug auswerten
         game_state["budget"] += board["netzbezug_budget"][clamp(game_state["netzbezug"], 0, 20)]
-        game_state["sp"] += board["netzbezug_sp_runde"][game_state["runde"]][clamp(game_state["netzbezug"], 0, 20)]
+        game_state["sp"] += board["netzbezug_sp_runde"][game_state["runde"] - 1][clamp(game_state["netzbezug"], 0, 20)]
 
-        game_master_list.append(game_state)
+        snapshot = game_state.copy()
+        snapshot["slots"] = game_state["slots"].copy()
+        snapshot["occupied"] = list(game_state["occupied"])
+        snapshot["played_cards"] = list(game_state["played_cards"])
+        snapshot["played_cards_log"] = game_state["played_cards_log"].copy()
 
+        game_master_list.append(snapshot)
+        game_state["round_end_reason"] = None
         game_state["runde"] += 1
     if uid % 1000 == 0:
-        print(uid)
+        print(f"Simulated games: {uid:_} / {number_of_games:_}")
 
 game_history_df = pd.DataFrame(game_master_list)
 game_history_df.to_parquet("History.parquet")
