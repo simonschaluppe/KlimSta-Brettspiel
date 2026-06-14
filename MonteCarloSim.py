@@ -7,7 +7,7 @@
 import random
 import pandas as pd
 
-number_of_games = 100_000
+number_of_games = 10_000
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
 download = False
 
