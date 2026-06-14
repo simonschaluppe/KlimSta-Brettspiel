@@ -14,15 +14,10 @@ download = False
 if download:
     sheet_id = "1y_pGNGqghla6DfOW5DVMdima_WDhQ3QxvIgioDkcWRg"
     gid_cards = "0"
-    gid_board = "376930118"
 
     url_cards = (
         f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
         f"?format=csv&gid={gid_cards}"
-    )
-    url_board = (
-        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
-        f"?format=csv&gid={gid_board}"
     )
     value_columns = ["BauEmissionen", "Strombedarf", "Stromproduktion", "Stromspeicher",
                      "Wärmeschutz", "Zufriedenheit", "Wärmepumpen-Effizienz"]
@@ -36,13 +31,59 @@ if download:
     )
     card_df['id'] = range(len(card_df))
 
-    board_df = pd.read_csv(url_board)
+
+    # base values -> Emi,Strombedarf,prod,speicher,Zuf
+    gid_base_board = "376930118"
+    url_base_board = (
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
+        f"?format=csv&gid={gid_base_board}"
+    )
+    base_board_df = pd.read_csv(url_base_board)
+    # Heiztabelle in SP
+    gid_heiz_sp = "836724185"
+    url_heiz_sp = (
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
+        f"?format=csv&gid={gid_heiz_sp}"
+    )
+    heiz_sp_df = pd.read_csv(url_heiz_sp)
+    # Heiztabelle in Budget
+    gid_heiz_budget = "1054195681"
+    url_heiz_budget = (
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
+        f"?format=csv&gid={gid_heiz_budget}"
+    )
+    heiz_budget_df = pd.read_csv(url_heiz_budget)
+    # Heiztabelle in Netzbezug
+    gid_wp_netzbezug = "1845164121"
+    url_wp_netzbezug = (
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
+        f"?format=csv&gid={gid_wp_netzbezug}"
+    )
+    wp_netzbezug_df = pd.read_csv(url_wp_netzbezug)
+    # Netzbezug zu SP, Budget
+    gid_netzbezug_final = "727895942"
+    url_netzbezug_final = (
+        f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
+        f"?format=csv&gid={gid_netzbezug_final}"
+    )
+    netzbezug_final_df = pd.read_csv(url_netzbezug_final)
+
+
     # Save
     card_df.to_pickle("cards.pkl")
-    board_df.to_pickle("board.pkl")
+    base_board_df.to_pickle("base_board.pkl")
+    heiz_sp_df.to_pickle("heiz_sp.pkl")
+    heiz_budget_df.to_pickle("heiz_budget.pkl")
+    wp_netzbezug_df.to_pickle("wp_netzbezug.pkl")
+    netzbezug_final_df.to_pickle("netzbezug_final.pkl")
 else:
     card_df = pd.read_pickle("cards.pkl")
-    board_df = pd.read_pickle("board.pkl")
+    base_board_df = pd.read_pickle("base_board.pkl")
+    heiz_sp_df = pd.read_pickle("heiz_sp.pkl")
+    heiz_budget_df = pd.read_pickle("heiz_budget.pkl")
+    wp_netzbezug_df = pd.read_pickle("wp_netzbezug.pkl")
+    netzbezug_final_df = pd.read_pickle("netzbezug_final.pkl")
+
 
 # Aus dem Excel!
 board = {"budget" : 4, "bau_em_start_index" : 5, "bau_emissionen" : [-5,-4,-3,-2,-1,0,1,2,3,4,5],
