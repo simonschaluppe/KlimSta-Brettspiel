@@ -106,10 +106,12 @@ for uid in range(number_of_games):
     # slots will be holding card_ids of cards in slots that are single use
     # occupied holds list of (single use) slot names which are in use
 
+    ''' NOT CURRENTLY IMPLEMENTED
     stats = {"min_budget": game_state["budget"], "max_budget": game_state["budget"],
              "min_sp": game_state["sp"], "max_sp": game_state["sp"],
              "min_netz": len(board["netzbezug_budget"]), "max_netz": 0, "min_zuf": game_state["zufriedenheit"],
              "max_zuf": game_state["zufriedenheit"]}
+    '''
     while game_state["runde"] < board["max_runden"]:
         while True:
             ######### SPIELZUG #########
