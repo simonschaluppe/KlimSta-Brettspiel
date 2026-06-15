@@ -183,4 +183,5 @@ Die Workshops werden an Zielgruppe, fachliche Vorkenntnisse und Veranstaltungsfo
 Leitung des Stadt-Wien-Kompetenzteams für klimafitte Stadtsanierung  
 Forschungsbereich **Climate-fit Buildings and Districts**, FH Technikum Wien  
 
+<img width="337" height="104" alt="image" src="https://github.com/user-attachments/assets/dab7e139-8a9f-4b41-86a1-1cf2e728b5c9" />
 
