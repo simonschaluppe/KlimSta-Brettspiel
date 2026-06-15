@@ -6,6 +6,7 @@
 # StartSP 0
 import random
 import pandas as pd
+from click.formatting import iter_rows
 
 number_of_games = 1_000_000
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
@@ -33,6 +34,28 @@ if download:
         .astype(int)
     )
     card_df['id'] = range(len(card_df))
+
+    # Voraussetzungen parsen
+    card_df['prerequisites'] = [[] for _ in range(len(card_df))]
+    card_df['exclusions'] = [[] for _ in range(len(card_df))]
+    bed_cards = card_df.loc[card_df['Voraussetzung Spalte'].notna()]
+    bed_cards_prerequisites = []
+    bed_cards_exclusion = []
+    for _, row in bed_cards.iterrows():
+        id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert']]['id'].values.tolist()
+        bed_cards_prerequisites.append(id_list)
+        not_id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert NICHT']]['id'].values.tolist()
+        bed_cards_exclusion.append(not_id_list)
+    card_df.loc[bed_cards.index, 'prerequisites'] = pd.Series(
+        bed_cards_prerequisites,
+        index=bed_cards.index,
+    )
+    card_df.loc[bed_cards.index, 'exclusions'] = pd.Series(
+        bed_cards_exclusion,
+        index=bed_cards.index,
+    )
+    print(card_df.loc[bed_cards.index][['Name', "prerequisites"]])
+    exit(0)
 
 
     # base values -> Emi,Strombedarf,prod,speicher,Zuf
@@ -132,7 +155,7 @@ game_master_list = []
 
 for uid in range(number_of_games):
     game_state = {"budget": board["budget"], 
-                  "bau_em": board["bau_em_start_index"], 
+                  "bau_em": board["bau_em_start_index"],
                   "runde": 1,
                   "game_id": uid,
                   "wae_schu": 0, 
@@ -146,6 +169,7 @@ for uid in range(number_of_games):
                   "slots" : [-1] * len(single_slots), 
                   "occupied" : set(),
                   "played_cards": set(),
+                  "excluded_ids": set(),
                   "played_cards_log": [],
                   "round_end_reason": None,
                   }
@@ -191,23 +215,25 @@ for uid in range(number_of_games):
                 k=min(3, len(unplayed_cards))
             )
 
-            # Nur leistbare Karten aus den drei gezogenen Karten
-            affordable_cards = [
+            # Nur spielbare Karten aus den drei gezogenen Karten (bezahlbar und Voraussetzungen passen)
+            playable_cards = [
                 card
                 for card in drawn_cards
-                if card["Kosten"] <= game_state["budget"]
+                if card["Kosten"] <= game_state["budget"] and card["id"] not in game_state["excluded_ids"] and
+                   (not card["prerequisites"] or set(card["prerequisites"]) & game_state["played_cards"])
             ]
 
-            # Keine der gezogenen Karten ist leistbar: Schlusswertung
-            if not affordable_cards:
+            # Keine der gezogenen Karten ist spielbar: Schlusswertung
+            if not playable_cards:
                 game_state["round_end_reason"] = "no_affordable_drawn_cards"
                 break
 
             # Eine leistbare Karte auswählen und spielen
-            chosen_card = random.choice(affordable_cards)
+            chosen_card = random.choice(playable_cards)
 
             # Werte anpassen, zurück zum Anfang
             game_state["played_cards"].add(chosen_card["id"])
+            game_state["excluded_ids"].update(chosen_card["exclusions"])
             game_state["played_cards_log"].append({
                 "runde": game_state["runde"],
                 "card_id": chosen_card["id"],
