@@ -54,8 +54,8 @@ if download:
         bed_cards_exclusion,
         index=bed_cards.index,
     )
-    print(card_df.loc[bed_cards.index][['Name', "prerequisites"]])
-    exit(0)
+
+    card_df = card_df.loc[card_df.index.repeat(card_df['Count'])].reset_index(drop=True)
 
 
     # base values -> Emi,Strombedarf,prod,speicher,Zuf
