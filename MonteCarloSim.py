@@ -10,9 +10,12 @@ import pandas as pd
 import datetime as dt
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import filedialog
 
 number_of_games = 100
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
+
+#df = read_excel(file_name, sheet_name = my_sheet)
 
 def clamp(value, min_val, max_val):
     return max(min_val, min(value, max_val))
@@ -22,25 +25,30 @@ root = tk.Tk()
 root.wm_attributes("-topmost", 1)
 root.withdraw()
 
-# Popup anzeigen
-now = dt.datetime.now()
-folder_name_new = now.strftime("Data_%y_%m_%d-%Hh_%Mm_%Ss")
-folders = os.listdir()
-data_folders = [path for path in folders if path.startswith("Data") and os.path.isdir(path)]
-data_folders.sort()
-if len(data_folders) > 0:
-    folder_name_old = data_folders[len(data_folders) - 1]
-    download = messagebox.askyesno("Update aus Sheet?", f"Sollen die Daten aus dem Sheet geladen werden?"
-                                   f"\nBei JA wird ein neuer Ordner mit dem Namen {folder_name_new} erstellt!"
-                               f"\nBei NEIN wird der letzte Ordner ({folder_name_old}) verwendet", parent=root)
-    folder_name = folder_name_new if download else folder_name_old
-else:
-    download = True
-    folder_name = folder_name_new
+# Dialog öffnen
+folder_path = filedialog.askdirectory(
+    title="Arbeitsordner auswählen",
+    initialdir=".",
+    mustexist=True  # Verhindert die Auswahl nicht-existierender Pfade
+)
 root.destroy()
 
-if download:
-    os.mkdir(folder_name)
+if folder_path:
+    try:
+        card_df = pd.read_pickle(folder_path + "/cards.pkl")
+        base_board_df = pd.read_pickle(folder_path + "/base_board.pkl")
+        heiz_sp_df = pd.read_pickle(folder_path + "/heiz_sp.pkl")
+        heiz_budget_df = pd.read_pickle(folder_path + "/heiz_budget.pkl")
+        wp_netzbezug_df = pd.read_pickle(folder_path + "/wp_netzbezug.pkl")
+        netzbezug_final_df = pd.read_pickle(folder_path + "/netzbezug_final.pkl")
+    except FileNotFoundError:
+        print("Folder was invalid! New folder will be created!")
+        folder_path = False
+
+if not folder_path:
+    now = dt.datetime.now()
+    folder_path = now.strftime("Data_%y_%m_%d-%Hh_%Mm_%Ss")
+    os.mkdir(folder_path)
     sheet_id = "1y_pGNGqghla6DfOW5DVMdima_WDhQ3QxvIgioDkcWRg"
     gid_cards = "0"
 
@@ -121,20 +129,23 @@ if download:
 
 
     # Save
-    card_df.to_pickle(folder_name + "/cards.pkl")
-    base_board_df.to_pickle(folder_name + "/base_board.pkl")
-    heiz_sp_df.to_pickle(folder_name + "/heiz_sp.pkl")
-    heiz_budget_df.to_pickle(folder_name + "/heiz_budget.pkl")
-    wp_netzbezug_df.to_pickle(folder_name + "/wp_netzbezug.pkl")
-    netzbezug_final_df.to_pickle(folder_name + "/netzbezug_final.pkl")
-else:
-    card_df = pd.read_pickle(folder_name + "/cards.pkl")
-    base_board_df = pd.read_pickle(folder_name + "/base_board.pkl")
-    heiz_sp_df = pd.read_pickle(folder_name + "/heiz_sp.pkl")
-    heiz_budget_df = pd.read_pickle(folder_name + "/heiz_budget.pkl")
-    wp_netzbezug_df = pd.read_pickle(folder_name + "/wp_netzbezug.pkl")
-    netzbezug_final_df = pd.read_pickle(folder_name + "/netzbezug_final.pkl")
+    card_df.to_pickle(folder_path + "/cards.pkl")
+    base_board_df.to_pickle(folder_path + "/base_board.pkl")
+    heiz_sp_df.to_pickle(folder_path + "/heiz_sp.pkl")
+    heiz_budget_df.to_pickle(folder_path + "/heiz_budget.pkl")
+    wp_netzbezug_df.to_pickle(folder_path + "/wp_netzbezug.pkl")
+    netzbezug_final_df.to_pickle(folder_path + "/netzbezug_final.pkl")
 
+try:
+    card_df
+    base_board_df
+    heiz_sp_df
+    heiz_budget_df
+    wp_netzbezug_df
+    netzbezug_final_df
+except NameError:
+    print("Fatal Error! Dataframes are not defined! Check loading code!")
+    exit(100)
 
 # MAGIC NUMBER: StartBudget (4)
 bau_em_row = base_board_df.loc[base_board_df['Wert'] == "Bauliche Emissionen"]
@@ -314,4 +325,4 @@ for uid in range(number_of_games):
         print(f"Simulated games: {uid:_} / {number_of_games:_}")
 
 game_history_df = pd.DataFrame(game_master_list)
-game_history_df.to_parquet(folder_name + "/History.parquet")
+game_history_df.to_parquet(folder_path + "/History.parquet")
