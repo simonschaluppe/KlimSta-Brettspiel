@@ -15,8 +15,6 @@ from tkinter import filedialog
 number_of_games = 100
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
 
-#df = read_excel(file_name, sheet_name = my_sheet)
-
 def clamp(value, min_val, max_val):
     return max(min_val, min(value, max_val))
 
@@ -34,6 +32,8 @@ folder_path = filedialog.askdirectory(
 root.destroy()
 
 if folder_path:
+    check_for_xlsx = False
+    success = False
     try:
         card_df = pd.read_pickle(folder_path + "/cards.pkl")
         base_board_df = pd.read_pickle(folder_path + "/base_board.pkl")
@@ -41,14 +41,34 @@ if folder_path:
         heiz_budget_df = pd.read_pickle(folder_path + "/heiz_budget.pkl")
         wp_netzbezug_df = pd.read_pickle(folder_path + "/wp_netzbezug.pkl")
         netzbezug_final_df = pd.read_pickle(folder_path + "/netzbezug_final.pkl")
+        success = True
     except FileNotFoundError:
-        print("Folder was invalid! New folder will be created!")
+        check_for_xlsx = True
+    if check_for_xlsx:
+        files = os.listdir(folder_path)
+        excel_files = [folder_path + "/" + file for file in files if file.endswith(".xlsx")]
+        for file in excel_files:
+            #try:
+            card_df = pd.read_excel(file, sheet_name="Massnahmenkarten Spielwerte")
+            base_board_df = pd.read_excel(file, sheet_name="Board BaseValues")
+            heiz_sp_df = pd.read_excel(file, sheet_name="Board Heiztabelle SP")
+            heiz_budget_df = pd.read_excel(file, sheet_name="Board Heiztabelle Budget")
+            wp_netzbezug_df = pd.read_excel(file, sheet_name="Board WP Netzbezug")
+            netzbezug_final_df = pd.read_excel(file, sheet_name="Netzbezug Impact")
+            success = True
+            #except Exception as e:
+             #   print("Exception when parsing excel file in folder")
+    if not success:
         folder_path = False
+        print("No valid data found in folder. Continuing by creating new folder and starting download!")
+
 
 if not folder_path:
     now = dt.datetime.now()
     folder_path = now.strftime("Data_%y_%m_%d-%Hh_%Mm_%Ss")
     os.mkdir(folder_path)
+
+    #### Read files
     sheet_id = "1y_pGNGqghla6DfOW5DVMdima_WDhQ3QxvIgioDkcWRg"
     gid_cards = "0"
 
@@ -56,41 +76,8 @@ if not folder_path:
         f"https://docs.google.com/spreadsheets/d/{sheet_id}/export"
         f"?format=csv&gid={gid_cards}"
     )
-    value_columns = ["BauEmissionen", "Strombedarf", "Stromproduktion", "Stromspeicher",
-                     "Wärmeschutz", "Zufriedenheit", "Wärmepumpen-Effizienz"]
 
     card_df = pd.read_csv(url_cards)
-
-    card_df[value_columns] = (
-        card_df[value_columns]
-        .fillna(0)
-        .astype(int)
-    )
-    card_df['id'] = range(len(card_df))
-
-    # Voraussetzungen parsen
-    card_df['prerequisites'] = [[] for _ in range(len(card_df))]
-    card_df['exclusions'] = [[] for _ in range(len(card_df))]
-    bed_cards = card_df.loc[card_df['Voraussetzung Spalte'].notna()]
-    bed_cards_prerequisites = []
-    bed_cards_exclusion = []
-    for _, row in bed_cards.iterrows():
-        id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert']]['id'].values.tolist()
-        bed_cards_prerequisites.append(id_list)
-        not_id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert NICHT']]['id'].values.tolist()
-        bed_cards_exclusion.append(not_id_list)
-    card_df.loc[bed_cards.index, 'prerequisites'] = pd.Series(
-        bed_cards_prerequisites,
-        index=bed_cards.index,
-    )
-    card_df.loc[bed_cards.index, 'exclusions'] = pd.Series(
-        bed_cards_exclusion,
-        index=bed_cards.index,
-    )
-
-    card_df = card_df.loc[card_df.index.repeat(card_df['Count'])].reset_index(drop=True)
-
-
     # base values -> Emi,Strombedarf,prod,speicher,Zuf
     gid_base_board = "376930118"
     url_base_board = (
@@ -128,14 +115,6 @@ if not folder_path:
     netzbezug_final_df = pd.read_csv(url_netzbezug_final)
 
 
-    # Save
-    card_df.to_pickle(folder_path + "/cards.pkl")
-    base_board_df.to_pickle(folder_path + "/base_board.pkl")
-    heiz_sp_df.to_pickle(folder_path + "/heiz_sp.pkl")
-    heiz_budget_df.to_pickle(folder_path + "/heiz_budget.pkl")
-    wp_netzbezug_df.to_pickle(folder_path + "/wp_netzbezug.pkl")
-    netzbezug_final_df.to_pickle(folder_path + "/netzbezug_final.pkl")
-
 try:
     card_df
     base_board_df
@@ -146,6 +125,64 @@ try:
 except NameError:
     print("Fatal Error! Dataframes are not defined! Check loading code!")
     exit(100)
+
+### Clean up card_df
+value_columns = ["BauEmissionen", "Strombedarf", "Stromproduktion", "Stromspeicher",
+                 "Wärmeschutz", "Zufriedenheit", "Wärmepumpen-Effizienz"]
+card_df[value_columns] = (
+    card_df[value_columns]
+    .fillna(0)
+    .astype(int)
+)
+card_df['id'] = range(len(card_df))
+# Voraussetzungen parsen
+card_df['prerequisites'] = [[] for _ in range(len(card_df))]
+card_df['exclusions'] = [[] for _ in range(len(card_df))]
+bed_cards = card_df.loc[card_df['Voraussetzung Spalte'].notna()]
+bed_cards_prerequisites = []
+bed_cards_exclusion = []
+for _, row in bed_cards.iterrows():
+    id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert']]['id'].values.tolist()
+    bed_cards_prerequisites.append(id_list)
+    not_id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert NICHT']]['id'].values.tolist()
+    bed_cards_exclusion.append(not_id_list)
+card_df.loc[bed_cards.index, 'prerequisites'] = pd.Series(
+    bed_cards_prerequisites,
+    index=bed_cards.index,
+)
+card_df.loc[bed_cards.index, 'exclusions'] = pd.Series(
+    bed_cards_exclusion,
+    index=bed_cards.index,
+)
+card_df = card_df.loc[card_df.index.repeat(card_df['Count'])].reset_index(drop=True)
+
+
+# Ensuring int types from float values
+base_board_df[["Start (0-basiert)", "Values0", "Values1", "Values2", "Values3", "Values4",
+               "Values5", "Values6", "Values7", "Values8", "Values9"]] = (
+    base_board_df[["Start (0-basiert)", "Values0", "Values1", "Values2", "Values3", "Values4",
+               "Values5", "Values6", "Values7", "Values8", "Values9"]].round(0).astype(int))
+heiz_sp_df[["WS", "Gas", "Biomasse", "Fernwärme", "Grünes Gas", "Wärmepumpe"]] = (
+    heiz_sp_df[["WS", "Gas", "Biomasse", "Fernwärme", "Grünes Gas", "Wärmepumpe"]].round(0).astype(int))
+heiz_budget_df[["WS", "Gas", "Biomasse", "Fernwärme", "Grünes Gas", "Wärmepumpe"]] = (
+    heiz_budget_df[["WS", "Gas", "Biomasse", "Fernwärme", "Grünes Gas", "Wärmepumpe"]].round(0).astype(int))
+wp_netzbezug_df[["WS", "Effizienz 1", "Effizienz 2", "Effizienz 3", "Effizienz 4", "Effizienz 5"]] = (
+    wp_netzbezug_df[["WS", "Effizienz 1", "Effizienz 2", "Effizienz 3",
+                     "Effizienz 4", "Effizienz 5"]].round(0).astype(int))
+netzbezug_final_df[["Netzbezug", "Budget", "SP Runde 1", "SP Runde 2", "SP Runde 3", "SP Runde 4"]] = (
+    netzbezug_final_df[["Netzbezug", "Budget",
+                        "SP Runde 1", "SP Runde 2", "SP Runde 3", "SP Runde 4"]].round(0).astype(int))
+
+
+
+#### Save Dataframes to pickles
+card_df.to_pickle(folder_path + "/cards.pkl")
+base_board_df.to_pickle(folder_path + "/base_board.pkl")
+heiz_sp_df.to_pickle(folder_path + "/heiz_sp.pkl")
+heiz_budget_df.to_pickle(folder_path + "/heiz_budget.pkl")
+wp_netzbezug_df.to_pickle(folder_path + "/wp_netzbezug.pkl")
+netzbezug_final_df.to_pickle(folder_path + "/netzbezug_final.pkl")
+
 
 # MAGIC NUMBER: StartBudget (4)
 bau_em_row = base_board_df.loc[base_board_df['Wert'] == "Bauliche Emissionen"]
@@ -172,7 +209,6 @@ board = {"budget" : 4,
          "netzbezug_budget" : netzbezug_final_df['Budget'].tolist(),
          "netzbezug_sp_runde" : netzbezug_final_df[['SP Runde 1', 'SP Runde 2', 'SP Runde 3', 'SP Runde 4']].values.transpose().tolist(),
          }
-
 
 slots = card_df['Slot/Stapel'].unique()
 single_slots = [slot for slot in slots if not slot.startswith("*")]
