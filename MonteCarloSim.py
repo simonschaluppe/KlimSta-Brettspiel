@@ -4,18 +4,43 @@
 # WärmepumpenIndex 4
 # StartWPEffizienz -1 (nicht vorhanden)
 # StartSP 0
+import os
 import random
 import pandas as pd
-from click.formatting import iter_rows
+import datetime as dt
+import tkinter as tk
+from tkinter import messagebox
 
-number_of_games = 1_000_000
+number_of_games = 100
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
-download = True
 
 def clamp(value, min_val, max_val):
     return max(min_val, min(value, max_val))
 
+# Root-Fenster erstellen und verstecken
+root = tk.Tk()
+root.wm_attributes("-topmost", 1)
+root.withdraw()
+
+# Popup anzeigen
+now = dt.datetime.now()
+folder_name_new = now.strftime("Data_%y_%m_%d-%Hh_%Mm_%Ss")
+folders = os.listdir()
+data_folders = [path for path in folders if path.startswith("Data") and os.path.isdir(path)]
+data_folders.sort()
+if len(data_folders) > 0:
+    folder_name_old = data_folders[len(data_folders) - 1]
+    download = messagebox.askyesno("Update aus Sheet?", f"Sollen die Daten aus dem Sheet geladen werden?"
+                                   f"\nBei JA wird ein neuer Ordner mit dem Namen {folder_name_new} erstellt!"
+                               f"\nBei NEIN wird der letzte Ordner ({folder_name_old}) verwendet", parent=root)
+    folder_name = folder_name_new if download else folder_name_old
+else:
+    download = True
+    folder_name = folder_name_new
+root.destroy()
+
 if download:
+    os.mkdir(folder_name)
     sheet_id = "1y_pGNGqghla6DfOW5DVMdima_WDhQ3QxvIgioDkcWRg"
     gid_cards = "0"
 
@@ -96,19 +121,19 @@ if download:
 
 
     # Save
-    card_df.to_pickle("cards.pkl")
-    base_board_df.to_pickle("base_board.pkl")
-    heiz_sp_df.to_pickle("heiz_sp.pkl")
-    heiz_budget_df.to_pickle("heiz_budget.pkl")
-    wp_netzbezug_df.to_pickle("wp_netzbezug.pkl")
-    netzbezug_final_df.to_pickle("netzbezug_final.pkl")
+    card_df.to_pickle(folder_name + "/cards.pkl")
+    base_board_df.to_pickle(folder_name + "/base_board.pkl")
+    heiz_sp_df.to_pickle(folder_name + "/heiz_sp.pkl")
+    heiz_budget_df.to_pickle(folder_name + "/heiz_budget.pkl")
+    wp_netzbezug_df.to_pickle(folder_name + "/wp_netzbezug.pkl")
+    netzbezug_final_df.to_pickle(folder_name + "/netzbezug_final.pkl")
 else:
-    card_df = pd.read_pickle("cards.pkl")
-    base_board_df = pd.read_pickle("base_board.pkl")
-    heiz_sp_df = pd.read_pickle("heiz_sp.pkl")
-    heiz_budget_df = pd.read_pickle("heiz_budget.pkl")
-    wp_netzbezug_df = pd.read_pickle("wp_netzbezug.pkl")
-    netzbezug_final_df = pd.read_pickle("netzbezug_final.pkl")
+    card_df = pd.read_pickle(folder_name + "/cards.pkl")
+    base_board_df = pd.read_pickle(folder_name + "/base_board.pkl")
+    heiz_sp_df = pd.read_pickle(folder_name + "/heiz_sp.pkl")
+    heiz_budget_df = pd.read_pickle(folder_name + "/heiz_budget.pkl")
+    wp_netzbezug_df = pd.read_pickle(folder_name + "/wp_netzbezug.pkl")
+    netzbezug_final_df = pd.read_pickle(folder_name + "/netzbezug_final.pkl")
 
 
 # MAGIC NUMBER: StartBudget (4)
@@ -289,4 +314,4 @@ for uid in range(number_of_games):
         print(f"Simulated games: {uid:_} / {number_of_games:_}")
 
 game_history_df = pd.DataFrame(game_master_list)
-game_history_df.to_parquet("History.parquet")
+game_history_df.to_parquet(folder_name + "/History.parquet")
