@@ -225,7 +225,7 @@ for uid in range(number_of_games):
 
             # Keine der gezogenen Karten ist spielbar: Schlusswertung
             if not playable_cards:
-                game_state["round_end_reason"] = "no_affordable_drawn_cards"
+                game_state["round_end_reason"] = "no_playable_drawn_cards"
                 break
 
             # Eine leistbare Karte auswählen und spielen
