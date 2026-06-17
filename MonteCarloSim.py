@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 
-number_of_games = 100
+number_of_games = 10_000
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
 
 def clamp(value, min_val, max_val):
@@ -32,23 +32,11 @@ folder_path = filedialog.askdirectory(
 root.destroy()
 
 if folder_path:
-    check_for_xlsx = False
     success = False
-    try:
-        card_df = pd.read_pickle(folder_path + "/cards.pkl")
-        base_board_df = pd.read_pickle(folder_path + "/base_board.pkl")
-        heiz_sp_df = pd.read_pickle(folder_path + "/heiz_sp.pkl")
-        heiz_budget_df = pd.read_pickle(folder_path + "/heiz_budget.pkl")
-        wp_netzbezug_df = pd.read_pickle(folder_path + "/wp_netzbezug.pkl")
-        netzbezug_final_df = pd.read_pickle(folder_path + "/netzbezug_final.pkl")
-        success = True
-    except FileNotFoundError:
-        check_for_xlsx = True
-    if check_for_xlsx:
-        files = os.listdir(folder_path)
-        excel_files = [folder_path + "/" + file for file in files if file.endswith(".xlsx")]
-        for file in excel_files:
-            #try:
+    files = os.listdir(folder_path)
+    excel_files = [folder_path + "/" + file for file in files if file.endswith(".xlsx")]
+    for file in excel_files:
+        try:
             card_df = pd.read_excel(file, sheet_name="Massnahmenkarten Spielwerte")
             base_board_df = pd.read_excel(file, sheet_name="Board BaseValues")
             heiz_sp_df = pd.read_excel(file, sheet_name="Board Heiztabelle SP")
@@ -56,8 +44,19 @@ if folder_path:
             wp_netzbezug_df = pd.read_excel(file, sheet_name="Board WP Netzbezug")
             netzbezug_final_df = pd.read_excel(file, sheet_name="Netzbezug Impact")
             success = True
-            #except Exception as e:
-             #   print("Exception when parsing excel file in folder")
+        except Exception as e:
+            print("Exception when parsing excel file in folder")
+    if not success:
+        try:
+            card_df = pd.read_pickle(folder_path + "/cards.pkl")
+            base_board_df = pd.read_pickle(folder_path + "/base_board.pkl")
+            heiz_sp_df = pd.read_pickle(folder_path + "/heiz_sp.pkl")
+            heiz_budget_df = pd.read_pickle(folder_path + "/heiz_budget.pkl")
+            wp_netzbezug_df = pd.read_pickle(folder_path + "/wp_netzbezug.pkl")
+            netzbezug_final_df = pd.read_pickle(folder_path + "/netzbezug_final.pkl")
+            success = True
+        except FileNotFoundError:
+            pass
     if not success:
         folder_path = False
         print("No valid data found in folder. Continuing by creating new folder and starting download!")
@@ -172,6 +171,7 @@ wp_netzbezug_df[["WS", "Effizienz 1", "Effizienz 2", "Effizienz 3", "Effizienz 4
 netzbezug_final_df[["Netzbezug", "Budget", "SP Runde 1", "SP Runde 2", "SP Runde 3", "SP Runde 4"]] = (
     netzbezug_final_df[["Netzbezug", "Budget",
                         "SP Runde 1", "SP Runde 2", "SP Runde 3", "SP Runde 4"]].round(0).astype(int))
+
 
 
 
