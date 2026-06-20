@@ -127,7 +127,7 @@ except NameError:
 
 ### Clean up card_df
 value_columns = ["BauEmissionen", "Strombedarf", "Stromproduktion", "Stromspeicher",
-                 "Wärmeschutz", "Zufriedenheit", "Wärmepumpen-Effizienz"]
+                 "Wärmeschutz", "Zufriedenheit", "Wärmepumpen-Effizienz", "SofortCO2", "SofortBudget"]
 card_df[value_columns] = (
     card_df[value_columns]
     .fillna(0)
@@ -324,6 +324,8 @@ for uid in range(number_of_games):
             game_state["wae_schu"] += chosen_card['Wärmeschutz']
             game_state["wp_eff"] += chosen_card['Wärmepumpen-Effizienz']
             game_state["zufriedenheit"] += chosen_card['Zufriedenheit']
+            game_state["sp"] += chosen_card['SofortCO2']
+            game_state["budget"] += chosen_card['SofortBudget']
             if not pd.isna(chosen_card['Heizsystem']):
                 game_state["wae_tech"] = mapping_heizsysteme[chosen_card['Heizsystem']]
 
