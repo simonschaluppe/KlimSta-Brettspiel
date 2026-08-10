@@ -1,0 +1,359 @@
+CARDSIZE=6.3,8.8
+LINKMULTI="Count"
+LINK="Massnahmenv11.csv"
+
+[AllCards]=AUTORANGE({(Name)})
+[FarbeLight]=#FFFFFF
+; Cardbacks
+[Slot/Stapel]=REPLACE([Slot/Stapel],"Ã¤","ae")
+[Slot/Stapel]=REPLACE([Slot/Stapel],"ä","ae")
+[Slot/Stapel]=REPLACE([Slot/Stapel],"Ã¼","ue")
+[Slot/Stapel]=REPLACE([Slot/Stapel],"ü","ue")
+
+[Labels]="Daemmung"|"Daemmung"|"Fenster"
+[Test]=LABELRANGE([Labels],@Daemmung)
+
+; Dämmung
+[BackDAE]=AUTORANGE(1)
+IMAGE=[BackDAE],"SymboleV7/CardBacks/DAE.png",0,0,100%,100%
+[DAWRange]=LABELRANGE([Slot/Stapel],@Daemmung)
+DUPLEX=[DAWRange],[BackDAE]
+; Fenster
+[BackFE]=AUTORANGE(1)
+IMAGE=[BackFE],"SymboleV7/CardBacks/FE.png",0,0,100%,100%
+[FERange]=LABELRANGE([Slot/Stapel],@Fenster)
+DUPLEX=[FERange],[BackFE]
+; Lüftung
+[BackLUE]=AUTORANGE(1)
+IMAGE=[BackLUE],"SymboleV7/CardBacks/LUE.png",0,0,100%,100%
+[LUERange]=LABELRANGE([Slot/Stapel],@Lueftung)
+DUPLEX=[LUERange],[BackLUE]
+; Abgabe
+[BackABG]=AUTORANGE(1)
+IMAGE=[BackABG],"SymboleV7/CardBacks/ABG.png",0,0,100%,100%
+[ABGRange]=LABELRANGE([Slot/Stapel],@Abgabe)
+DUPLEX=[ABGRange],[BackABG]
+; Zufriedenheit
+[BackZUF]=AUTORANGE(1)
+IMAGE=[BackZUF],"SymboleV7/CardBacks/ZUF.png",0,0,100%,100%
+[EXDBGRange]=LABELRANGE([Slot/Stapel],@Zufriedenheit)
+DUPLEX=[EXDBGRange],[BackZUF]
+; Dachnutzung
+[BackDN]=AUTORANGE(1)
+IMAGE=[BackDN],"SymboleV7/CardBacks/DN.png",0,0,100%,100%
+[DNRange]=LABELRANGE([Slot/Stapel],@Dachnutzung)
+DUPLEX=[DNRange],[BackDN]
+; Flexibilität
+[BackLS]=AUTORANGE(1)
+IMAGE=[BackLS],"SymboleV7/CardBacks/LS.png",0,0,100%,100%
+[LSRange]=LABELRANGE([Slot/Stapel],@*Flexibilitaet)
+DUPLEX=[LSRange],[BackLS]
+; Wärmeerzeugung
+[BackERZ]=AUTORANGE(1)
+IMAGE=[BackERZ],"SymboleV7/CardBacks/ERZ.png",0,0,100%,100%
+[ERZRange]=LABELRANGE([Slot/Stapel],@Waermeerzeugung)
+DUPLEX=[ERZRange],[BackERZ]
+; Effizienz
+[BackEL]=AUTORANGE(1)
+IMAGE=[BackEL],"SymboleV7/CardBacks/EL.png",0,0,100%,100%
+[ELRange]=LABELRANGE([Slot/Stapel],@*Effizienz)
+DUPLEX=[ELRange],[BackEL]
+
+
+PRINT=DUPLEX
+SAVEPDF="MassnahmenV11.pdf"
+
+;;;;;;;;;; SETUP
+; Konstanten
+; Font für alle Beschriftungen über den Elementen
+FONT=Arial,6,IT,#
+; Siehe Bilddateien Hintergrund
+[BilderTransparenzFarbe]=#ff66ff
+; Halbe Breite der schwarzen Outline der gesamten Karte
+[BorderBoxSize]=0.04
+; Padding innerhalb des Rahmens
+[BorderBoxPadding]=0.25
+[EffectBoxWidth]=5
+[EffectSize]=0.9
+; Overlap X means that each Icon only uses X% of the space it would need
+[EffectOverlap]=42
+[EffectTitlePaddingRight]=0.2
+[EffectSymbolsPaddingRight]=0.2
+[NameTextBoxTopMargin]=0.2
+[NameTextBoxHeight]=4.5
+[NameTextBoxPadding]=0.3
+[AreaIcon_Size]=1.1
+[TitleHeight]=0.3
+;;;;;;;;;;;;
+[WhenThenBoxHeight]=2.2
+[WhenBoxWidth]=3.2
+[ThenBoxWidth]=2.2
+[WhenThenPadding]=0.2
+[WhenThenSubfieldPaddingX]=0.2
+[WhenThenSubfieldPaddingY]=0.05
+[WhenThenArrowHeight]=0.5
+[HtmlImgSize]=0.5
+; Height * Prozentsatz, jeweils 27% für die 3 inneren Boxen und jeweils 4,75% für die Spacings drüber und drunter
+[WhenThenPercentMargin]=0.0475
+[WhenThenPercentHeight]=0.27
+
+; Frames um die Karten zu platzieren
+[CardBoxWidth]=6.3-2*[BorderBoxSize]
+[CardBoxHeight]=8.8-2*[BorderBoxSize]
+
+<CardBox>=[BorderBoxSize],[BorderBoxSize],[CardBoxWidth],[CardBoxHeight]
+<CardField>=[BorderBoxSize]+[BorderBoxPadding],[BorderBoxSize]+[BorderBoxPadding],[CardBoxWidth]-2*[BorderBoxPadding],[CardBoxHeight]-2*[BorderBoxPadding]
+
+<AreaIcon_Box>=<CardField,TL,[AreaIcon_Size]+0.5,([AreaIcon_Size]+[TitleHeight]*0)+0.2>
+; <AreaIcon_Box>=<CardField,TL,[AreaIcon_Size]+0.5,([AreaIcon_Size]+[TitleHeight])+0.2>
+; <AreaIcon_Title>=<AreaIcon_Box,TS,[TitleHeight]>
+<AreaIcon_Field>=<AreaIcon_Box,TS,0>
+<AreaIcon_Field1Main>=<AreaIcon_Field,TL,[AreaIcon_Size],[AreaIcon_Size]>
+<AreaIcon_Field2Sub>=<AreaIcon_Field,BR,[AreaIcon_Size]*0.6,[AreaIcon_Size]*0.6>
+
+<EffectBox>=<CardField,TR,[EffectBoxWidth],[TitleHeight]+[EffectSize]>
+; <EffectTitleBox>=<EffectBox,TS,[TitleHeight]>
+; <EffectTitleField>=<EffectTitleBox,HL,([EffectBoxWidth]-[EffectTitlePaddingRight])>
+<EffectFieldw/oPadding>=<EffectBox,TS,[EffectSize]>
+<EffectField>=<EffectFieldw/oPadding,HL,([EffectBoxWidth]-[EffectSymbolsPaddingRight])>
+
+<Spacing>=<CardField,TS,([AreaIcon_Size]+[TitleHeight]*0)+[NameTextBoxTopMargin]>
+; <Spacing>=<CardField,TS,([AreaIcon_Size]+[TitleHeight])+[NameTextBoxTopMargin]>
+<NameBox>=<CardField,TS,[NameTextBoxHeight]>
+<NameField>=[BorderBoxSize]+[BorderBoxPadding]+[NameTextBoxPadding],[BorderBoxSize]+[BorderBoxPadding]+([AreaIcon_Size]+[TitleHeight]*0)+[NameTextBoxTopMargin]+[NameTextBoxPadding],[CardBoxWidth]-2*[BorderBoxPadding]-2*[NameTextBoxPadding],[NameTextBoxHeight]-2*[NameTextBoxPadding]
+; <NameField>=[BorderBoxSize]+[BorderBoxPadding]+[NameTextBoxPadding],[BorderBoxSize]+[BorderBoxPadding]+([AreaIcon_Size]+[TitleHeight])+[NameTextBoxTopMargin]+[NameTextBoxPadding],[CardBoxWidth]-2*[BorderBoxPadding]-2*[NameTextBoxPadding],[NameTextBoxHeight]-2*[NameTextBoxPadding]
+
+<Spacing>=<CardField,TS,0.3>
+<ToPlayBox>=<CardField,TS,0>
+<ToPlayTitle>=<ToPlayBox,TS,[TitleHeight]>
+<ToPlayField>=<ToPlayBox,TS,0>
+
+
+
+;<WhenBox>=<CardField,BL,[WhenBoxWidth],[WhenThenBoxHeight]>
+;<WhenTitle>=<WhenBox,TS,[TitleHeight]>
+;<WhenArea>=<WhenBox,TS,0>
+;<WhenField>=<WhenArea,CC,([WhenBoxWidth]-2*[WhenThenPadding]),([WhenThenBoxHeight]-[TitleHeight]-2*[WhenThenPadding])>
+;
+;<ThenBox>=<CardField,BR,[ThenBoxWidth],[WhenThenBoxHeight]>
+;<ThenTitle>=<ThenBox,TS,[TitleHeight]>
+;<ThenArea>=<ThenBox,TS,0>
+;<ThenField>=<ThenArea,CC,([ThenBoxWidth]-2*[WhenThenPadding]),([WhenThenBoxHeight]-[TitleHeight]-2*[WhenThenPadding])>
+;
+;[CaFiHei]=[CardBoxHeight]-2*[BorderBoxPadding]
+;[TextBoxPosY]=[CaFiHei]+[BorderBoxSize]+[BorderBoxPadding]-[WhenThenBoxHeight]+[TitleHeight]
+;[TextBoxPosYBottom]=[CaFiHei]+[BorderBoxSize]+[BorderBoxPadding]
+;[TextBoxMiddle]=([TextBoxPosY]+[TextBoxPosYBottom])/2
+;[CaFiWid]=[CardBoxWidth]-2*[BorderBoxPadding]
+;<PfeilBox>=[BorderBoxSize]+[BorderBoxPadding]+[WhenBoxWidth],[TextBoxMiddle]-[WhenThenArrowHeight]/2,[CaFiWid]-[WhenBoxWidth]-[ThenBoxWidth],[WhenThenArrowHeight]
+;
+;[WhenThenInnerBoxesMargin]=([WhenThenBoxHeight]-[TitleHeight]-2*[WhenThenPadding])*[WhenThenPercentMargin]
+;[WhenThenInnerBoxesHeight]=([WhenThenBoxHeight]-[TitleHeight]-2*[WhenThenPadding])*[WhenThenPercentHeight]
+;
+;<Spacing>=<WhenField,TS,[WhenThenInnerBoxesMargin]>
+;<WhenField1>=<WhenField,TS,[WhenThenInnerBoxesHeight]>
+;<Spacing>=<WhenField,TS,[WhenThenInnerBoxesMargin]>
+;<WhenField2>=<WhenField,TS,[WhenThenInnerBoxesHeight]>
+;<Spacing>=<WhenField,TS,[WhenThenInnerBoxesMargin]>
+;<WhenField3>=<WhenField,TS,[WhenThenInnerBoxesHeight]>
+;<Spacing>=<WhenField,TS,[WhenThenInnerBoxesMargin]>
+;<WhenField1Text>=<WhenField1,CC,([WhenBoxWidth]-2*[WhenThenPadding]-2*[WhenThenSubfieldPaddingX]),([WhenThenInnerBoxesHeight]-2*[WhenThenSubfieldPaddingY])>
+;<WhenField2Text>=<WhenField2,CC,([WhenBoxWidth]-2*[WhenThenPadding]-2*[WhenThenSubfieldPaddingX]),([WhenThenInnerBoxesHeight]-2*[WhenThenSubfieldPaddingY])>
+;<WhenField3Text>=<WhenField3,CC,([WhenBoxWidth]-2*[WhenThenPadding]-2*[WhenThenSubfieldPaddingX]),([WhenThenInnerBoxesHeight]-2*[WhenThenSubfieldPaddingY])>
+;
+;<ThenField1>=<ThenField,TS,(2*[WhenThenInnerBoxesHeight]+2*[WhenThenInnerBoxesMargin])>
+;<Spacing>=<ThenField,TS,[WhenThenInnerBoxesMargin]>
+;<ThenField2>=<ThenField,TS,[WhenThenInnerBoxesHeight]>
+;<ThenField2Text>=<ThenField2,CC,([ThenBoxWidth]-2*[WhenThenPadding]-2*[WhenThenSubfieldPaddingX]),([WhenThenInnerBoxesHeight]-2*[WhenThenSubfieldPaddingY])>
+
+
+; HTML Konstanten
+; Font für Namensbox
+HTMLFONT=Name,"Arial",10,B,#,left
+HTMLFONT=Voraussetzung,"Arial",10,,#,left
+HTMLMARGINS=Voraussetzung,0,0,0,0,center
+HTMLFONT=Untertitel,"Arial",7,,#,left
+HTMLFONT=Beschreibung,"Arial",7,I,#,left
+HTMLMARGINS=Name,0,0,0,0,top
+; Font für Wennbox
+HTMLFONT=BedText,"Arial",6,,#,center
+HTMLMARGINS=BedText,0,0,0,0,center
+; Umlaute/sz erkennen und verarbeiten
+HTMLKEY=[AllCards],"Ã„","&Auml;"
+HTMLKEY=[AllCards],"Ã–","&Ouml;"
+HTMLKEY=[AllCards],"Ãœ","&Uuml;"
+HTMLKEY=[AllCards],"Ã¤","&auml;"
+HTMLKEY=[AllCards],"Ã¶","&ouml;"
+HTMLKEY=[AllCards],"Ã¼","&uuml;"
+HTMLKEY=[AllCards],"ÃŸ","&szlig;"
+; Unsere Symbole (an der Mittellinie ausgerichtet und case-sensitive Ersetzung)
+HTMLIMAGE=[AllCards],WP,"SymboleV7/Effekte/Waermepumpe.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],BI,"SymboleV7/Effekte/Biomasse.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],FW,"SymboleV7/Effekte/Fernwaerme.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],GG,"SymboleV7/Effekte/GruenesGas.png",[HtmlImgSize],[HtmlImgSize],MPC
+
+HTMLIMAGE=[AllCards],WS,"SymboleV7/Effekte/Waermeschutz.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],EF,"SymboleV7/Effekte/Effizienz.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],SP,"SymboleV7/Effekte/Strom.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],S+,"SymboleV7/Effekte/Stecker-.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],S-,"SymboleV7/Effekte/Stecker+.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],SV,"SymboleV7/Effekte/Verbrauch.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],FL,"SymboleV7/Effekte/Flexi.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],ZU,"SymboleV7/Effekte/Zufriedenheit.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],DAW,"SymboleV7/Typen/Daemmung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],DOGD,"SymboleV7/Typen/DOGD.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],DUGD,"SymboleV7/Typen/DUGD.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],FE,"SymboleV7/Typen/Fenster.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],DTUE,"SymboleV7/Typen/DTUE.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],LUE,"SymboleV7/Typen/Lueftung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],ERZ,"SymboleV7/Typen/Waermeerzeugung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],DN,"SymboleV7/Typen/Dachnutzung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],ABG,"SymboleV7/Typen/Abgabe.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],$M$,"SymboleV7/Effekte/Geld.png",[HtmlImgSize],[HtmlImgSize],MP
+HTMLIMAGE=[AllCards],$VP$,"SymboleV7/Effekte/VP.png",[HtmlImgSize],[HtmlImgSize],MP
+HTMLIMAGE=[AllCards],SO,"SymboleV7/Typen/SO.png",[HtmlImgSize],[HtmlImgSize],MPC
+
+
+;;;;; SETZUNG DER KARTEN
+; Rahmen
+ROUNDRECT=[DAWRange],<CardBox>,#,#fddbab,[BorderBoxSize]*2
+ROUNDRECT=[FERange],<CardBox>,#,#d3edfa,[BorderBoxSize]*2
+ROUNDRECT=[LUERange],<CardBox>,#,#9fd1ea,[BorderBoxSize]*2
+ROUNDRECT=[ABGRange],<CardBox>,#,#f7bdd3,[BorderBoxSize]*2
+ROUNDRECT=[EXDBGRange],<CardBox>,#,#DAF2D2,[BorderBoxSize]*2
+ROUNDRECT=[DNRange],<CardBox>,#,#f6af79,[BorderBoxSize]*2
+ROUNDRECT=[LSRange],<CardBox>,#,#EAEEC0,[BorderBoxSize]*2
+ROUNDRECT=[ERZRange],<CardBox>,#,#f08e9d,[BorderBoxSize]*2
+ROUNDRECT=[ELRange],<CardBox>,#,#9aa8cb,[BorderBoxSize]*2
+
+; Slot Symbol
+[SymbolPfad]=JOIN("SymboleV7/Typen/",REPLACE([Slot/Stapel],"*",""),".png")
+
+; TEXT=[AllCards],"Kartenslot",<AreaIcon_Title>,center,top
+IMAGE=[AllCards],[SymbolPfad],<AreaIcon_Field1Main>,0,T
+; Subsymbol TODO: Drin lassen oder raus?
+;[SubSymbolPfad]=JOIN("SymboleV7/Typen/",[BonusIcon],".png")
+;IF=LENGTH([BonusIcon])>0
+;IMAGE=LABELRANGE(LENGTH([SubSymbolPfad]),>0),[SubSymbolPfad],<AreaIcon_Field2Sub>,0,T
+;ENDIF
+
+; Effekte Icons
+ICON=[AllCards],FW,"SymboleV7/Effekte/Fernwaerme.png"
+ICON=[AllCards],BI,"SymboleV7/Effekte/Biomasse.png"
+ICON=[AllCards],WP,"SymboleV7/Effekte/Waermepumpe.png"
+ICON=[AllCards],GG,"SymboleV7/Effekte/GruenesGas.png"
+ICON=[AllCards],EN,"SymboleV7/Effekte/BauEm.png"
+ICON=[AllCards],EM,"SymboleV7/Effekte/BauEmGespart.png"
+ICON=[AllCards],BM,"SymboleV7/Effekte/Stecker+.png"
+ICON=[AllCards],BP,"SymboleV7/Effekte/Stecker-.png"
+ICON=[AllCards],SP,"SymboleV7/Effekte/Strom.png"
+ICON=[AllCards],FL,"SymboleV7/Effekte/Flexi.png"
+ICON=[AllCards],WS,"SymboleV7/Effekte/Waermeschutz.png"
+ICON=[AllCards],EF,"SymboleV7/Effekte/Effizienz.png"
+ICON=[AllCards],ZU,"SymboleV7/Effekte/Zufriedenheit.png"
+ICON=[AllCards],ZM,"SymboleV7/Effekte/ZufriedenheitUn.png"
+;ICON=[AllCards],WP,"SymboleV7/Effekte/SteckerWP.png"
+IF=LENGTH([EffektParsed])>0
+; TEXT=[AllCards],"Permanente Effekte",<EffectTitleField>,right,top
+ICONS=[AllCards],[EffektParsed],<EffectField>,[EffectSize],[EffectSize],0,T,right,center,100,2,[EffectOverlap]
+ENDIF
+
+; Namensbox
+ROUNDRECT=[AllCards],<NameBox>,#,[FarbeLight],0.04
+; (erst string aus HTMLtags und csv-Feldern zusammenbauen, dann platzieren)
+[Namenseintrag]=JOIN([Name],"<br><Untertitel>",REPLACE([Slot/Stapel],"*",""),"</Untertitel><hr><Beschreibung>",[Beschreibung],"</Beschreibung>")
+HTMLTEXT=[AllCards],[Namenseintrag],<NameField>,[BilderTransparenzFarbe],0,ETFM,100,Name
+
+;; Titel wenn/dann
+<Spacing>=<ToPlayTitle,SL,[NameTextBoxPadding]>
+TEXT=[AllCards],"Um diese Karte zu spielen:",<ToPlayTitle,SL,0>,left,top
+ROUNDRECT=[AllCards],<ToPlayField>,#,[FarbeLight],0.04
+<ToPlayInner>=[BorderBoxSize]+[BorderBoxPadding]+[NameTextBoxPadding],6.69+[NameTextBoxPadding],[CardBoxWidth]-2*[BorderBoxPadding]-2*[NameTextBoxPadding],1.82-2*[NameTextBoxPadding]
+<ToPlayLeft>=<ToPlayInner,HL,75%%>
+
+<ToPlayRight>=<ToPlayInner,HR,22%%>
+<ToPlayRightTitle>=<ToPlayRight,TS,[TitleHeight]>
+<ToPlayRightSymbol>=<ToPlayRight,TS,0>
+; RECTANGLE=[AllCards],<ToPlayLeft>,#
+FONT=Arial,6,IT,#
+TEXT=[AllCards],"Bezahle",<ToPlayRightTitle>,right,top
+FONT=Arial,10,BT,#
+TEXT=[AllCards],[Kosten],<ToPlayRightSymbol,SL,0.3>,left,center
+IMAGE=[AllCards],"SymboleV7/Effekte/Geld.png",<ToPlayRightSymbol,SL,0>,0,TP
+; TODOTODOTODO
+; Voraussezung zusammensetzen aus "Voraussetzung Spalte", "Voraussetzung Wert", "Voraussetzung Wert NICHT"
+
+[VorText]=JOIN("Nur mit ",[Voraussetzung Wert])
+[VorNotText]=JOIN("Nicht mit ",[Voraussetzung Wert NICHT])
+IF=LENGTH([Voraussetzung Spalte])>0
+IF=LENGTH([Voraussetzung Wert])>0
+HTMLTEXT=[AllCards],[VorText],<ToPlayLeft>,[BilderTransparenzFarbe],0,ETMS,100,Voraussetzung
+ELSE
+HTMLTEXT=[AllCards],[VorNotText],<ToPlayLeft>,[BilderTransparenzFarbe],0,ETMS,100,Voraussetzung
+ENDIF
+ENDIF
+<SofortCO2>=<NameBox,BR,1.5,1>
+<SofortCO2Inner>=<SofortCO2,CW,0.8>
+<Spacing>=<SofortCO2Inner,SL,0.1>
+<SofortImage>=<SofortCO2Inner,SL,0.8>
+<Spacing>=<SofortCO2Inner,SL,0.1>
+<SofortText>=<SofortCO2Inner,SL,0.4>
+IF=[SofortCO2]<>0
+ROUNDRECT=[AllCards],<SofortCO2>,#,[FarbeLight],0.04
+IMAGE=[AllCards],"SymboleV7/Effekte/VP.png",<SofortImage>,0,TP
+FONT=Arial,10,BT,#
+TEXT=[AllCards],[SofortCO2],<SofortText>,center,center
+ENDIF
+
+;HTMLTEXT=[AllCards],[Voraussetzung],<ToPlayLeft>,[BilderTransparenzFarbe],0,ETMS,100,Voraussetzung
+;<ToPlayInner>=[BorderBoxSize]+[BorderBoxPadding]+[NameTextBoxPadding],[BorderBoxSize]+[BorderBoxPadding]+([AreaIcon_Size]+[TitleHeight]*0)+[NameTextBoxTopMargin]+[NameTextBoxPadding],[CardBoxWidth]-2*[BorderBoxPadding]-2*[NameTextBoxPadding],[NameTextBoxHeight]-2*[NameTextBoxPadding]
+;TEXT=[AllCards],"Soforteffekt:",<ThenTitle>,center,top
+;; Wenn/Dann Feld + Pfeil
+;ROUNDRECT=[AllCards],<WhenArea>,#,[FarbeLight],0.04
+;ROUNDRECT=[AllCards],<ThenArea>,#,[FarbeLight],0.04
+;IMAGE=[AllCards],"SymboleV7/Pfeil.png",<PfeilBox>,0,T
+;; Hier werden die Texte zusammengesetzt
+;[Bed1Text]=JOIN("<div style='display: flex; justify-content: space-between; align-items:center;'><span>",[Bedingung1Text],"</span><span><b>",[Bedingung1Symbolsprache],"</b></span></div>")
+;[Bed2Text]=JOIN("<div style='display: flex; justify-content: space-between; align-items:center;'><span>",[Bedingung2Text],"</span><span><b>",[Bedingung2Symbolsprache],"</b></span></div>")
+;[KostenText]=JOIN("<div style='display: flex; justify-content: space-between; align-items:center;'><span>Zahle</span><span><b>",[Kosten],"$M$</b></span></div>")
+;; Und hier werden sie (falls nötig) gesetzt
+;IF=LENGTH([Bedingung1Symbolsprache])>0
+;ROUNDRECT=[AllCards],<WhenField1>,#,{FarbeLight?§},0.02,8,2
+;HTMLTEXT=[AllCards],[Bed1Text],<WhenField1Text>,[BilderTransparenzFarbe],0,ETFM,100,BedText
+;IF=LENGTH([Bedingung2Symbolsprache])>0
+;ROUNDRECT=[AllCards],<WhenField2>,#,{FarbeLight?§},0.02,8,2
+;HTMLTEXT=[AllCards],[Bed2Text],<WhenField2Text>,[BilderTransparenzFarbe],0,ETFM,100,BedText
+;ENDIF
+;ENDIF
+;IF=LENGTH([Kosten])>0
+;ROUNDRECT=[AllCards],<WhenField3>,#,{FarbeLight?§},0.02,8,2
+;HTMLTEXT=[AllCards],[KostenText],<WhenField3Text>,[BilderTransparenzFarbe],0,ET,100,BedText
+;ENDIF
+;
+;; Dann Feld
+;FONT=Arial,6,TF,#
+;; Piktogramm und Text
+;TEXT=[AllCards],"Spiele diese Karte in den entsprechenden Kartenslot",<ThenField1,TS,0.3>,center,wwtop
+;<Pictogram>=<ThenField1,TS,0>
+;<PicField>=<Pictogram,HC,0.85>
+;EDGE=[AllCards],DASH
+;<DashedCard>=<PicField,BR,0.63,0.88>
+;ROUNDRECT=[AllCards],<DashedCard>,#,{Farbe?§},0.02
+;EDGE=[AllCards],SOLID
+;<MiniCard>=<PicField,TL,0.63,0.88>
+;<MiniCardTL>=<MiniCard,TL,0.25,0.25>
+;<MiniCardIcon>=<MiniCardTL,BR,0.2,0.2>
+;ROUNDRECT=[AllCards],<MiniCard>,#,{Farbe?§},0.02
+;IMAGE=[AllCards],[SymbolPfad],<MiniCardIcon>,0,T
+;LAYER=70
+;IMAGE=[AllCards],"SymboleV7/Pfeil.png",<DashedCard,CC,0.3,0.3>,0,T
+;ENDLAYER
+;; Siegpunkte
+;[VPStartText]=EXPAND("",1,200)
+;[VPText]=JOINIF([VPStartText],[Siegpunkte],<,0,"<span style='color: red;'><b>Verliere</b></span>","<span>Erhalte</span>")
+;[VPSymbol]=JOIN("<div style='display: flex; justify-content: space-between; align-items:center;'>",[VPText],"<span><b>$VP$ ",REPLACE([Siegpunkte],"-",""),"</b></span></div>")
+;IF=[Siegpunkte]<>0
+;ROUNDRECT=[AllCards],<ThenField2>,#,{FarbeLight?§},0.02,8,2
+;HTMLTEXT=[AllCards],[VPSymbol],<ThenField2Text>,[BilderTransparenzFarbe],0,ETFM,100,BedText
+;ENDIF
+
