@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 
-number_of_games = 10_000
+number_of_games = 300_000
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
 
 def clamp(value, min_val, max_val):
@@ -34,7 +34,7 @@ root.destroy()
 if folder_path:
     success = False
     files = os.listdir(folder_path)
-    excel_files = [folder_path + "/" + file for file in files if file.endswith(".xlsx")]
+    excel_files = [folder_path + "/" + file for file in files if file.endswith(".xlsx") and not file.startswith("~$")]
     for file in excel_files:
         try:
             card_df = pd.read_excel(file, sheet_name="Massnahmenkarten Spielwerte")
@@ -191,6 +191,12 @@ prod_row = base_board_df.loc[base_board_df['Wert'] == "Stromproduktion"]
 speicher_row = base_board_df.loc[base_board_df['Wert'] == "Stromspeicher"]
 zuf_row = base_board_df.loc[base_board_df['Wert'] == "Zufriedenheit"]
 
+heiz_sp_df = heiz_sp_df.drop(heiz_sp_df.columns[[0, 1]], axis=1)
+heiz_budget_df = heiz_budget_df.drop(heiz_budget_df.columns[[0, 1]], axis=1)
+wp_netzbezug_df = wp_netzbezug_df.drop(wp_netzbezug_df.columns[[0, 1, 2]], axis=1)
+netzbezug_final_df = netzbezug_final_df.loc[:, ~netzbezug_final_df.columns.astype(str).str.contains("Real")]
+netzbezug_final_df = netzbezug_final_df.drop(netzbezug_final_df.columns[0], axis=1)
+
 board = {"budget" : 4,
          "start_sp" : 0, 
          "max_runden" : 4,
@@ -204,11 +210,13 @@ board = {"budget" : 4,
          "speicher_prod_netzbezug": speicher_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
          "zuf_start_index" : int(zuf_row['Start (0-basiert)'].iloc[0]),
          "zufriedenheit_budget" : zuf_row[[f"Values{i}" for i in range(10)]].values.tolist()[0],
-         "heiz_siegpunkte" : heiz_sp_df.values.transpose().tolist(), "heiz_kosten" : heiz_budget_df.values.transpose().tolist(),
+         "heiz_siegpunkte" : heiz_sp_df.loc[:, ~heiz_sp_df.columns.astype(str).str.contains("Real")].values.transpose().tolist(),
+         "heiz_kosten" : heiz_budget_df.loc[:, ~heiz_budget_df.columns.astype(str).str.contains("Real")].values.transpose().tolist(),
          "wp_eff_netzbezug" : wp_netzbezug_df.values.transpose().tolist(),
          "netzbezug_budget" : netzbezug_final_df['Budget'].tolist(),
          "netzbezug_sp_runde" : netzbezug_final_df[['SP Runde 1', 'SP Runde 2', 'SP Runde 3', 'SP Runde 4']].values.transpose().tolist(),
          }
+
 
 slots = card_df['Slot/Stapel'].unique()
 single_slots = [slot for slot in slots if not slot.startswith("*")]
@@ -337,7 +345,7 @@ for uid in range(number_of_games):
         # Heizenergie
         game_state["sp"] += board["heiz_siegpunkte"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
         game_state["budget"] += board["heiz_kosten"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
-        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][clamp(game_state["wp_eff"], 0, 4)][clamp(game_state["wae_schu"], 0, 9)]
+        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][clamp(game_state["wp_eff"], 1, 5) - 1][clamp(game_state["wae_schu"], 0, 9)]
         # Strombedarf
         game_state["netzbezug"] += board["bedarf_netzbezug"][clamp(game_state["bedarf"], 0, 9)]
         # Stromproduktion
@@ -347,8 +355,8 @@ for uid in range(number_of_games):
         # Zufriedenheit
         game_state["budget"] += board["zufriedenheit_budget"][clamp(game_state["zufriedenheit"], 0, 9)]
         # Netzbezug auswerten
-        game_state["budget"] += board["netzbezug_budget"][clamp(game_state["netzbezug"], 0, 20)]
-        game_state["sp"] += board["netzbezug_sp_runde"][game_state["runde"] - 1][clamp(game_state["netzbezug"], 0, 20)]
+        game_state["budget"] += board["netzbezug_budget"][clamp(game_state["netzbezug"], 0, 35)]
+        game_state["sp"] += board["netzbezug_sp_runde"][game_state["runde"] - 1][clamp(game_state["netzbezug"], 0, 35)]
 
         snapshot = game_state.copy()
         snapshot["slots"] = game_state["slots"].copy()

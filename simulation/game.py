@@ -303,3 +303,6 @@ def run(uid=None):
         game_state["round_end_reason"] = None
         game_state["runde"] += 1
     return snapshot
+
+for uid in range(100):
+    run(uid)
