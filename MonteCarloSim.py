@@ -12,7 +12,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import filedialog
 
-number_of_games = 300_000
+number_of_games = 50_000
 mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWWP" : 4}
 
 def clamp(value, min_val, max_val):
@@ -339,13 +339,12 @@ for uid in range(number_of_games):
 
 
         ######### WERTUNG #########
-
         # Bauliche Emissionen:
         game_state["sp"] += board["bau_emissionen"][clamp(game_state["bau_em"], 0, 9)]
         # Heizenergie
         game_state["sp"] += board["heiz_siegpunkte"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
         game_state["budget"] += board["heiz_kosten"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
-        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][clamp(game_state["wp_eff"], 1, 5) - 1][clamp(game_state["wae_schu"], 0, 9)]
+        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][clamp(game_state["wp_eff"], 0, 4)][clamp(game_state["wae_schu"], 0, 9)]
         # Strombedarf
         game_state["netzbezug"] += board["bedarf_netzbezug"][clamp(game_state["bedarf"], 0, 9)]
         # Stromproduktion
