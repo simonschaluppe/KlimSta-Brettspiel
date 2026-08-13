@@ -1,6 +1,6 @@
 CARDSIZE=6.3,8.8
 LINKMULTI="Count"
-LINK="Massnahmenv11.csv"
+LINK="Massnahmenv12.csv"
 
 [AllCards]=AUTORANGE({(Name)})
 [FarbeLight]=#FFFFFF
@@ -61,7 +61,7 @@ DUPLEX=[ELRange],[BackEL]
 
 
 PRINT=DUPLEX
-SAVEPDF="MassnahmenV11.pdf"
+SAVEPDF="MassnahmenV12.pdf"
 
 ;;;;;;;;;; SETUP
 ; Konstanten
