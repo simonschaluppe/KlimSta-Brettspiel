@@ -165,8 +165,22 @@ slot_to_index = {
 
 game_master_list = []
 
+
+def card_name(id):
+    return 
+
+
 def clamp(value, min_val, max_val):
     return max(min_val, min(value, max_val))
+
+def is_playable(card, game_state):
+    is_affordable = card["Kosten"] <= game_state["budget"] 
+    prerequesits = card["id"] not in game_state["excluded_ids"] and (not card["prerequisites"] or set(card["prerequisites"]) & game_state["played_cards"])
+        
+    is_bedarf_not_too_negative = not(card["Strombedarf"] + game_state["bedarf"]>len(board["bedarf_netzbezug"])-1)
+    is_zufriedenheit_not_too_negative = not(card["Zufriedenheit"] + game_state["zufriedenheit"]>len(board["zufriedenheit_budget"])-1)
+
+    return all([is_affordable, prerequesits, is_bedarf_not_too_negative, is_zufriedenheit_not_too_negative])
 
 def run(uid=None):
     game_state = {"budget": board["budget"], 
@@ -234,8 +248,7 @@ def run(uid=None):
             playable_cards = [
                 card
                 for card in drawn_cards
-                if card["Kosten"] <= game_state["budget"] and card["id"] not in game_state["excluded_ids"] and
-                    (not card["prerequisites"] or set(card["prerequisites"]) & game_state["played_cards"])
+                if is_playable(card, game_state)
             ]
 
             # Keine der gezogenen Karten ist spielbar: Schlusswertung
@@ -260,13 +273,13 @@ def run(uid=None):
 
 
             game_state["budget"] -= chosen_card['Kosten']
-            game_state["bau_em"] += chosen_card['BauEmissionen']
-            game_state["bedarf"] += chosen_card['Strombedarf']
-            game_state["strom_prod"] += chosen_card['Stromproduktion']
-            game_state["speicher"] += chosen_card['Stromspeicher']
-            game_state["wae_schu"] += chosen_card['Wärmeschutz']
-            game_state["wp_eff"] += chosen_card['Wärmepumpen-Effizienz']
-            game_state["zufriedenheit"] += chosen_card['Zufriedenheit']
+            game_state["bau_em"] = clamp(game_state["bau_em"] + chosen_card['BauEmissionen'], 0, 9)
+            game_state["bedarf"] = clamp(game_state["bedarf"] + chosen_card['Strombedarf'], 0, 9)
+            game_state["strom_prod"] = clamp(game_state["strom_prod"] + chosen_card['Stromproduktion'], 0, 9)
+            game_state["speicher"] = clamp(game_state["speicher"] + chosen_card['Stromspeicher'], 0, 9)
+            game_state["wae_schu"] = clamp(game_state["wae_schu"] + chosen_card['Wärmeschutz'], 0, 9)
+            game_state["wp_eff"] = clamp(game_state["wp_eff"] + chosen_card['Wärmepumpen-Effizienz'], -1, 4)
+            game_state["zufriedenheit"] = clamp(game_state["zufriedenheit"] + chosen_card['Zufriedenheit'], 0, 9)
             game_state["sp"] += chosen_card['SofortCO2']
             game_state["budget"] += chosen_card['SofortBudget']
             if not pd.isna(chosen_card['Heizsystem']):
@@ -276,22 +289,23 @@ def run(uid=None):
         ######### WERTUNG #########
 
         # Bauliche Emissionen:
-        game_state["sp"] += board["bau_emissionen"][clamp(game_state["bau_em"], 0, 9)]
+        game_state["sp"] += board["bau_emissionen"][game_state["bau_em"]]
         # Heizenergie
-        game_state["sp"] += board["heiz_siegpunkte"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
-        game_state["budget"] += board["heiz_kosten"][game_state["wae_tech"]][clamp(game_state["wae_schu"], 0, 9)]
-        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][clamp(game_state["wp_eff"], 0, 4)][clamp(game_state["wae_schu"], 0, 9)]
+        game_state["sp"] += board["heiz_siegpunkte"][game_state["wae_tech"]][game_state["wae_schu"]]
+        game_state["budget"] += board["heiz_kosten"][game_state["wae_tech"]][game_state["wae_schu"]]
+        game_state["netzbezug"] = 0 if game_state["wae_tech"] < 4 else board["wp_eff_netzbezug"][game_state["wp_eff"]][game_state["wae_schu"]]
         # Strombedarf
-        game_state["netzbezug"] += board["bedarf_netzbezug"][clamp(game_state["bedarf"], 0, 9)]
+        game_state["netzbezug"] += board["bedarf_netzbezug"][game_state["bedarf"]]
         # Stromproduktion
-        game_state["netzbezug"] += board["strom_prod_netzbezug"][clamp(game_state["strom_prod"], 0, 9)]
+        game_state["netzbezug"] += board["strom_prod_netzbezug"][game_state["strom_prod"]]
         # Stromspeicher
-        game_state["netzbezug"] += board["speicher_prod_netzbezug"][clamp(min(game_state["strom_prod"], game_state["speicher"]), 0, 9)]
+        game_state["netzbezug"] += board["speicher_prod_netzbezug"][min(game_state["strom_prod"], game_state["speicher"])]
         # Zufriedenheit
-        game_state["budget"] += board["zufriedenheit_budget"][clamp(game_state["zufriedenheit"], 0, 9)]
+        game_state["budget"] += board["zufriedenheit_budget"][game_state["zufriedenheit"]]
         # Netzbezug auswerten
-        game_state["budget"] += board["netzbezug_budget"][clamp(game_state["netzbezug"], 0, 20)]
-        game_state["sp"] += board["netzbezug_sp_runde"][game_state["runde"] - 1][clamp(game_state["netzbezug"], 0, 20)]
+        game_state["budget"] += board["netzbezug_budget"][clamp(game_state["netzbezug"], 0, 35)]
+        game_state["sp"] += board["netzbezug_sp_runde"][game_state["runde"] - 1][clamp(game_state["netzbezug"], 0, 35)]
+
 
         snapshot = game_state.copy()
         snapshot["slots"] = game_state["slots"].copy()
@@ -299,10 +313,13 @@ def run(uid=None):
         snapshot["played_cards"] = list(game_state["played_cards"])
         snapshot["played_cards_log"] = game_state["played_cards_log"].copy()
 
+
         game_master_list.append(snapshot)
         game_state["round_end_reason"] = None
         game_state["runde"] += 1
+
+        if game_state["budget"] < 0:
+            break       # game over
+    
     return snapshot
 
-for uid in range(100):
-    run(uid)
