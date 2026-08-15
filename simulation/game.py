@@ -5,6 +5,7 @@ import random
 import tkinter as tk
 from tkinter import filedialog
 import pandas as pd
+from pandas.api.types import is_integer
 
 
 root = tk.Tk()
@@ -79,7 +80,13 @@ card_df['exclusions'] = [[] for _ in range(len(card_df))]
 bed_cards = card_df.loc[card_df['Voraussetzung Spalte'].notna()]
 bed_cards_prerequisites = []
 bed_cards_exclusion = []
+ws_prerequisites = []
 for _, row in bed_cards.iterrows():
+    if is_integer(row["Voraussetzung Wert"]):
+        ws_prerequisites.append(row["Voraussetzung Wert"])
+        row["Voraussetzung Wert"] = pd.NA
+    else:
+        ws_prerequisites.append(0)
     id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert']]['id'].values.tolist()
     bed_cards_prerequisites.append(id_list)
     not_id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert NICHT']]['id'].values.tolist()
@@ -92,6 +99,11 @@ card_df.loc[bed_cards.index, 'exclusions'] = pd.Series(
     bed_cards_exclusion,
     index=bed_cards.index,
 )
+card_df.loc[bed_cards.index, 'ws_prerequisites'] = pd.Series(
+    ws_prerequisites,
+    index=bed_cards.index,
+)
+card_df['ws_prerequisites'] = card_df['ws_prerequisites'].fillna(0.0)
 card_df = card_df.loc[card_df.index.repeat(card_df['Count'])].reset_index(drop=True)
 
 
@@ -194,6 +206,7 @@ def get_playable_cards(card_list, game_state):
     occupied = game_state["occupied"]
     budget = game_state["budget"]
     bedarf = game_state["bedarf"]
+    wae_schu = game_state["wae_schu"]
     zufriedenheit = game_state["zufriedenheit"]
 
     max_bedarf = len(board["bedarf_netzbezug"]) - 1
@@ -205,6 +218,7 @@ def get_playable_cards(card_list, game_state):
         and card["id"] not in played
         and card["id"] not in excluded
         and card["Kosten"] <= budget
+        and card["ws_prerequisites"] <= wae_schu
         and (
             not card["prerequisites"]
             or card["prerequisites"] & played
@@ -299,7 +313,11 @@ def run(uid=None):
         # Stromproduktion
         game_state["netzbezug"] += board["strom_prod_netzbezug"][game_state["strom_prod"]]
         # Stromspeicher
-        game_state["netzbezug"] += board["speicher_prod_netzbezug"][min(game_state["strom_prod"], game_state["speicher"])]
+        # 10 ist Flexibles Speichermanagement
+        if 10 in game_state["played_cards"]:
+            game_state["netzbezug"] += board["speicher_prod_netzbezug"][game_state["speicher"]]
+        else:
+            game_state["netzbezug"] += board["speicher_prod_netzbezug"][min(game_state["strom_prod"], game_state["speicher"])]
         # Zufriedenheit
         game_state["budget"] += board["zufriedenheit_budget"][game_state["zufriedenheit"]]
         # Netzbezug auswerten
