@@ -5,6 +5,7 @@ import random
 import tkinter as tk
 from tkinter import filedialog
 import pandas as pd
+from pandas.api.types import is_integer
 
 
 root = tk.Tk()
@@ -79,7 +80,13 @@ card_df['exclusions'] = [[] for _ in range(len(card_df))]
 bed_cards = card_df.loc[card_df['Voraussetzung Spalte'].notna()]
 bed_cards_prerequisites = []
 bed_cards_exclusion = []
+ws_prerequisites = []
 for _, row in bed_cards.iterrows():
+    if is_integer(row["Voraussetzung Wert"]):
+        ws_prerequisites.append(row["Voraussetzung Wert"])
+        row["Voraussetzung Wert"] = pd.NA
+    else:
+        ws_prerequisites.append(0)
     id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert']]['id'].values.tolist()
     bed_cards_prerequisites.append(id_list)
     not_id_list = card_df.loc[card_df[row['Voraussetzung Spalte']] == row['Voraussetzung Wert NICHT']]['id'].values.tolist()
@@ -92,6 +99,11 @@ card_df.loc[bed_cards.index, 'exclusions'] = pd.Series(
     bed_cards_exclusion,
     index=bed_cards.index,
 )
+card_df.loc[bed_cards.index, 'ws_prerequisites'] = pd.Series(
+    ws_prerequisites,
+    index=bed_cards.index,
+)
+card_df['ws_prerequisites'] = card_df['ws_prerequisites'].fillna(0.0)
 card_df = card_df.loc[card_df.index.repeat(card_df['Count'])].reset_index(drop=True)
 
 
@@ -153,10 +165,16 @@ mapping_heizsysteme = {"Gas" : 0, "BIO" : 1, "FW" : 2, "GG" : 3, "WP" : 4, "ABWW
 slots = card_df['Slot/Stapel'].unique()
 single_slots = [slot for slot in slots if not slot.startswith("*")]
 
-cards_by_slot = {
-    slot: group.to_dict("records")
-    for slot, group in card_df.groupby("Slot/Stapel", sort=False)
-}
+#cards_by_slot = {
+#    slot: group.to_dict("records")
+#    for slot, group in card_df.groupby("Slot/Stapel", sort=False)
+#}
+
+cards = card_df.to_dict("records")
+
+for card in cards:
+    card["prerequisites"] = set(card["prerequisites"])
+    card["exclusions"] = set(card["exclusions"])
 
 slot_to_index = {
     slot: index
@@ -175,12 +193,39 @@ def clamp(value, min_val, max_val):
 
 def is_playable(card, game_state):
     is_affordable = card["Kosten"] <= game_state["budget"] 
-    prerequesits = card["id"] not in game_state["excluded_ids"] and (not card["prerequisites"] or set(card["prerequisites"]) & game_state["played_cards"])
+    prerequesits = card["id"] not in game_state["excluded_ids"] and (not card["prerequisites"] or card["prerequisites"] & game_state["played_cards"])
         
     is_bedarf_not_too_negative = not(card["Strombedarf"] + game_state["bedarf"]>len(board["bedarf_netzbezug"])-1)
     is_zufriedenheit_not_too_negative = not(card["Zufriedenheit"] + game_state["zufriedenheit"]>len(board["zufriedenheit_budget"])-1)
 
     return all([is_affordable, prerequesits, is_bedarf_not_too_negative, is_zufriedenheit_not_too_negative])
+
+def get_playable_cards(card_list, game_state):
+    played = game_state["played_cards"]
+    excluded = game_state["excluded_ids"]
+    occupied = game_state["occupied"]
+    budget = game_state["budget"]
+    bedarf = game_state["bedarf"]
+    wae_schu = game_state["wae_schu"]
+    zufriedenheit = game_state["zufriedenheit"]
+
+    max_bedarf = len(board["bedarf_netzbezug"]) - 1
+    max_zufriedenheit = len(board["zufriedenheit_budget"]) - 1
+
+    return [
+        card for card in card_list
+        if card["Slot/Stapel"] not in occupied
+        and card["id"] not in played
+        and card["id"] not in excluded
+        and card["Kosten"] <= budget
+        and card["ws_prerequisites"] <= wae_schu
+        and (
+            not card["prerequisites"]
+            or card["prerequisites"] & played
+        )
+        and card["Strombedarf"] + bedarf <= max_bedarf
+        and card["Zufriedenheit"] + zufriedenheit <= max_zufriedenheit
+    ]
 
 def run(uid=None):
     game_state = {"budget": board["budget"], 
@@ -214,50 +259,19 @@ def run(uid=None):
     '''
     while game_state["runde"] <= board["max_runden"]:
         while True:
-            ######### SPIELZUG #########
-            # Verfügbare Kartenstapel ermitteln
-            available_slots = [
-                slot for slot in slots
-                if slot not in game_state["occupied"] # nur aus noch nicht belegten slots
-                and any(
-                    card["id"] not in game_state["played_cards"] # falls in dem stapel noch karten sind, die noch nicht gespielt wurden
-                    for card in cards_by_slot[slot]
-                )
-            ]
-            if not available_slots:
-                game_state["round_end_reason"] = "no_available_slots"
+            if game_state["budget"] <= 0:
+                game_state["round_end_reason"] = "No money available"
                 break
-            
-            # Kartenstapel wählen
-            chosen_slot = random.choice(available_slots)
 
-            # Noch nicht gespielte Karten dieses Stapels
-            unplayed_cards = [
-                card
-                for card in cards_by_slot[chosen_slot]
-                if card["id"] not in game_state["played_cards"]
-            ]
 
-            # Drei Karten ziehen, oder alle verbleibenden, falls weniger als drei vorhanden sind
-            drawn_cards = random.sample(
-                unplayed_cards,
-                k=min(3, len(unplayed_cards))
-            )
+            playable = get_playable_cards(cards, game_state)
 
-            # Nur spielbare Karten aus den drei gezogenen Karten (bezahlbar und Voraussetzungen passen)
-            playable_cards = [
-                card
-                for card in drawn_cards
-                if is_playable(card, game_state)
-            ]
-
-            # Keine der gezogenen Karten ist spielbar: Schlusswertung
-            if not playable_cards:
-                game_state["round_end_reason"] = "no_playable_drawn_cards"
+            if not playable:
+                game_state["round_end_reason"] = "No cards available"
                 break
 
             # Eine leistbare Karte auswählen und spielen
-            chosen_card = random.choice(playable_cards)
+            chosen_card = random.choice(playable)
 
             # Werte anpassen, zurück zum Anfang
             game_state["played_cards"].add(chosen_card["id"])
@@ -268,8 +282,8 @@ def run(uid=None):
             })
 
             if chosen_card['Slot/Stapel'] in single_slots:
-                game_state["occupied"].add(chosen_slot)
-                game_state["slots"][slot_to_index[chosen_slot]] = chosen_card["id"]
+                game_state["occupied"].add(chosen_card['Slot/Stapel'])
+                game_state["slots"][slot_to_index[chosen_card['Slot/Stapel']]] = chosen_card["id"]
 
 
             game_state["budget"] -= chosen_card['Kosten']
@@ -299,7 +313,11 @@ def run(uid=None):
         # Stromproduktion
         game_state["netzbezug"] += board["strom_prod_netzbezug"][game_state["strom_prod"]]
         # Stromspeicher
-        game_state["netzbezug"] += board["speicher_prod_netzbezug"][min(game_state["strom_prod"], game_state["speicher"])]
+        # 10 ist Flexibles Speichermanagement
+        if 10 in game_state["played_cards"]:
+            game_state["netzbezug"] += board["speicher_prod_netzbezug"][game_state["speicher"]]
+        else:
+            game_state["netzbezug"] += board["speicher_prod_netzbezug"][min(game_state["strom_prod"], game_state["speicher"])]
         # Zufriedenheit
         game_state["budget"] += board["zufriedenheit_budget"][game_state["zufriedenheit"]]
         # Netzbezug auswerten
