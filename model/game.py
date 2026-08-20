@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pandas as pd
-from pandas.api.types import is_integer
 
 
 HEATING_SYSTEMS = {
@@ -58,18 +57,26 @@ def load_game_data(version):
 
     cards[value_columns] = cards[value_columns].fillna(0).astype(int)
 
-    # card_id is the stable logical identifier used throughout the model.
-    # Count is expanded afterwards, so several physical copies may share a card_id.
+    # Stable logical card ids
     if cards["card_id"].isna().any():
         raise ValueError("All cards must have a card_id")
 
     if cards["card_id"].duplicated().any():
-        duplicates = cards.loc[cards["card_id"].duplicated(), "card_id"].tolist()
-        raise ValueError(f"card_id must be unique before Count expansion: {duplicates}")
+        duplicates = cards.loc[
+            cards["card_id"].duplicated(keep=False),
+            "card_id",
+        ].unique()
 
-    cards["prerequisites"] = [[] for _ in range(len(cards))]
-    cards["exclusions"] = [[] for _ in range(len(cards))]
-    cards["ws_prerequisites"] = 0
+        raise ValueError(
+            f"card_id must be unique before Count expansion: {duplicates.tolist()}"
+        )
+
+    # ------------------------------------------------------------------
+    # Parse card constraints
+    # ------------------------------------------------------------------
+    cards["requires_cards"] = [set() for _ in range(len(cards))]
+    cards["excludes_cards"] = [set() for _ in range(len(cards))]
+    cards["min_thermal_protection"] = 0
 
     conditional = cards.loc[cards["Voraussetzung Spalte"].notna()]
 
@@ -78,25 +85,32 @@ def load_game_data(version):
         required = card["Voraussetzung Wert"]
         excluded = card["Voraussetzung Wert NICHT"]
 
-        # Existing convention: integer prerequisite means a minimum
-        # thermal-protection level rather than another card.
-        if is_integer(required):
-            cards.at[idx, "ws_prerequisites"] = int(required)
-        else:
-            cards.at[idx, "prerequisites"] = cards.loc[
-                cards[column] == required, "card_id"
-            ].tolist()
+        # Numeric requirement = minimum thermal protection.
+        if pd.notna(required) and isinstance(required, (int, float)):
+            cards.at[idx, "min_thermal_protection"] = int(required)
 
-        cards.at[idx, "exclusions"] = cards.loc[
-            cards[column] == excluded, "card_id"
-        ].tolist()
+        # Otherwise resolve the configured column/value to stable card_id(s).
+        elif pd.notna(required):
+            cards.at[idx, "requires_cards"] = set(
+                cards.loc[
+                    cards[column] == required,
+                    "card_id",
+                ]
+            )
 
-    # Expand physical card copies.
-    cards = cards.loc[cards.index.repeat(cards["Count"])].reset_index(drop=True)
+        # Resolve exclusions in the same way.
+        if pd.notna(excluded):
+            cards.at[idx, "excludes_cards"] = set(
+                cards.loc[
+                    cards[column] == excluded,
+                    "card_id",
+                ]
+            )
 
-    # Convert prerequisite/exclusion lists to sets for faster checks.
-    cards["prerequisites"] = cards["prerequisites"].apply(set)
-    cards["exclusions"] = cards["exclusions"].apply(set)
+    # Expand physical copies after constraints have been resolved
+    cards = cards.loc[
+        cards.index.repeat(cards["Count"])
+    ].reset_index(drop=True)
 
     # ------------------------------------------------------------------
     # Board lookup tables
@@ -127,7 +141,9 @@ def load_game_data(version):
     ].round().astype(int)
 
     def row(name):
-        return base_board.loc[base_board["Wert"] == name].iloc[0]
+        return base_board.loc[
+            base_board["Wert"] == name
+        ].iloc[0]
 
     embodied = row("Bauliche Emissionen")
     demand = row("Strombedarf")
@@ -155,16 +171,28 @@ def load_game_data(version):
         "satisfaction_start": int(satisfaction["Start (0-basiert)"]),
         "satisfaction_budget": satisfaction[value_names].astype(int).tolist(),
 
-        "heating_vp": heating_vp.values.transpose().tolist(),
-        "heating_budget": heating_budget.values.transpose().tolist(),
-        "hp_grid": hp_grid.values.transpose().tolist(),
+        "heating_vp": heating_vp[
+            ["Gas", "Biomasse", "Fernwärme", "Grünes Gas", "Wärmepumpe"]
+        ].values.transpose().tolist(),
+
+        "heating_budget": heating_budget[
+            ["Gas", "Biomasse", "Fernwärme", "Grünes Gas", "Wärmepumpe"]
+        ].values.transpose().tolist(),
+
+        "hp_grid": hp_grid[
+            ["Effizienz 1", "Effizienz 2", "Effizienz 3", "Effizienz 4", "Effizienz 5"]
+        ].values.transpose().tolist(),
 
         "grid_budget": grid_impact["Budget"].tolist(),
+
         "grid_vp": grid_impact[
             ["SP Runde 1", "SP Runde 2", "SP Runde 3", "SP Runde 4"]
         ].values.transpose().tolist(),
     }
 
+    # ------------------------------------------------------------------
+    # Slots
+    # ------------------------------------------------------------------
     single_slots = [
         slot
         for slot in cards["Slot/Stapel"].dropna().unique()
@@ -177,8 +205,20 @@ def load_game_data(version):
         "cards": cards,
         "board": board,
         "single_slots": single_slots,
-        "slot_to_index": {slot: i for i, slot in enumerate(single_slots)},
+        "slot_to_index": {
+            slot: i
+            for i, slot in enumerate(single_slots)
+        },
     }
+
+def storage_index(state):
+    if FLEXIBLE_STORAGE_CARD_ID in state["played_cards"]:
+        return state["storage"]
+
+    return min(
+        state["electricity_generation"],
+        state["storage"],
+    )
 
 def new_game(game_data, game_id=None):
     """Create the initial state of one game."""
@@ -211,23 +251,30 @@ def new_game(game_data, game_id=None):
 
 
 
-def playable_cards(cards, state, max_demand, max_satisfaction ):
+def playable_cards(cards, state, max_demand, max_satisfaction):
+    played = state["played_cards"]
+    excluded = state["excluded_ids"]
+
     return [
         card for card in cards
         if (
             card["Slot/Stapel"] not in state["occupied_slots"]
-            and card["card_id"] not in state["played_cards"]
-            and card["card_id"] not in state["excluded_ids"]
+            and card["card_id"] not in played
+            and card["card_id"] not in excluded
             and card["Kosten"] <= state["budget"]
-            and card["ws_prerequisites"] <= state["thermal_protection"]
+
+            and card["min_thermal_protection"] <= state["thermal_protection"]
+
             and (
-                not card["prerequisites"]
-                or card["prerequisites"] & state["played_cards"]
+                not card["requires_cards"]
+                or card["requires_cards"] & played
             )
+
             and (
                 card["Strombedarf"] + state["electricity_demand"]
                 <= max_demand
             )
+
             and (
                 card["Zufriedenheit"] + state["satisfaction"]
                 <= max_satisfaction
@@ -239,7 +286,7 @@ def playable_cards(cards, state, max_demand, max_satisfaction ):
 def play_card(card, state, game_data):
     """Apply one card to the game state."""
     state["played_cards"].add(card["card_id"])
-    state["excluded_ids"].update(card["exclusions"])
+    state["excluded_ids"].update(card["excludes_cards"])
 
     slot = card["Slot/Stapel"]
     if slot in game_data["single_slots"]:
@@ -277,50 +324,73 @@ def play_card(card, state, game_data):
         state["heating_system"] = HEATING_SYSTEMS[card["Heizsystem"]]
 
 
-def score_round(state, game_data):
-    """Apply the existing end-of-round effects."""
+def score_round(state, game_data, return_details=False):
+    """Apply end-of-round effects and optionally return a scoring breakdown."""
     board = game_data["board"]
 
     # Embodied emissions
-    state["vp"] += board["embodied_vp"][state["embodied_emissions"]]
+    embodied_vp = board["embodied_vp"][state["embodied_emissions"]]
+    state["vp"] += embodied_vp
 
     # Heating system
-    state["vp"] += board["heating_vp"][
+    heating_vp = board["heating_vp"][
         state["heating_system"]
     ][state["thermal_protection"]]
 
-    state["budget"] += board["heating_budget"][
+    heating_budget = board["heating_budget"][
         state["heating_system"]
     ][state["thermal_protection"]]
+
+    state["vp"] += heating_vp
+    state["budget"] += heating_budget
 
     # Grid import from heating
     if state["heating_system"] < 4:
-        state["grid_import"] = 0
+        heating_grid = 0
     else:
-        state["grid_import"] = board["hp_grid"][
+        heating_grid = board["hp_grid"][
             state["hp_efficiency"]
         ][state["thermal_protection"]]
 
     # Electricity demand and production
-    state["grid_import"] += board["demand_grid"][state["electricity_demand"]]
-    state["grid_import"] += board["production_grid"][state["electricity_generation"]]
+    demand_grid = board["demand_grid"][state["electricity_demand"]]
+    production_grid = board["production_grid"][state["electricity_generation"]]
 
     # Storage
-    if FLEXIBLE_STORAGE_CARD_ID in state["played_cards"]:
-        storage_index = state["storage"]
-    else:
-        storage_index = min(
-            state["electricity_generation"],
-            state["storage"],
-        )
+    storage_grid = board["storage_grid"][storage_index(state)]
 
-    state["grid_import"] += board["storage_grid"][storage_index]
+    state["grid_import"] = (
+        heating_grid
+        + demand_grid
+        + production_grid
+        + storage_grid
+    )
 
     # Satisfaction
-    state["budget"] += board["satisfaction_budget"][state["satisfaction"]]
+    satisfaction_budget = board["satisfaction_budget"][state["satisfaction"]]
+    state["budget"] += satisfaction_budget
 
     # Grid impact
     grid_index = clamp(state["grid_import"], 0, 35)
 
-    state["budget"] += board["grid_budget"][grid_index]
-    state["vp"] += board["grid_vp"][state["round"] - 1][grid_index]
+    grid_budget = board["grid_budget"][grid_index]
+    grid_vp = board["grid_vp"][state["round"] - 1][grid_index]
+
+    state["budget"] += grid_budget
+    state["vp"] += grid_vp
+
+    if return_details:
+        return {
+            "embodied_vp": embodied_vp,
+            "heating_vp": heating_vp,
+            "grid_vp": grid_vp,
+            "heating_budget": heating_budget,
+            "satisfaction_budget": satisfaction_budget,
+            "grid_budget": grid_budget,
+            "heating_grid": heating_grid,
+            "demand_grid": demand_grid,
+            "production_grid": production_grid,
+            "storage_grid": storage_grid,
+            "grid_import": state["grid_import"],
+            "grid_index": grid_index,
+        }

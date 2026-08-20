@@ -50,7 +50,7 @@ def simulate_game(
 
         turn = 0
 
-        while state["budget"] >= 0:
+        while True:
 
             offered = offer_cards(
                 game_data["cards"],
