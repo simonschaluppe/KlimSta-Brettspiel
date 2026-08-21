@@ -151,6 +151,10 @@ def simulate_game(
         "played_cards": sorted(state["played_cards"]),
         "excluded_ids": sorted(state["excluded_ids"]),
         "occupied_slots": sorted(state["occupied_slots"]),
+                "completed": (
+            rounds_played == game_data["board"]["max_rounds"]
+            and state["budget"] >= 0
+        ),
     }
 
     return final_state, plays
