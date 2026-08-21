@@ -1,6 +1,6 @@
 CARDSIZE=6.3,8.8
 LINKMULTI="Count"
-LINK="Massnahmenv12.csv"
+LINK="Massnahmenv14.csv"
 
 [AllCards]=AUTORANGE({(Name)})
 [FarbeLight]=#FFFFFF
@@ -15,53 +15,53 @@ LINK="Massnahmenv12.csv"
 
 ; Dämmung
 [BackDAE]=AUTORANGE(1)
-IMAGE=[BackDAE],"SymboleV7/CardBacks/DAE.png",0,0,100%,100%
+IMAGE=[BackDAE],"SymboleV14/CardBacks/DAE.png",0,0,100%,100%
 [DAWRange]=LABELRANGE([Slot/Stapel],@Daemmung)
 DUPLEX=[DAWRange],[BackDAE]
 ; Fenster
 [BackFE]=AUTORANGE(1)
-IMAGE=[BackFE],"SymboleV7/CardBacks/FE.png",0,0,100%,100%
+IMAGE=[BackFE],"SymboleV14/CardBacks/FE.png",0,0,100%,100%
 [FERange]=LABELRANGE([Slot/Stapel],@Fenster)
 DUPLEX=[FERange],[BackFE]
 ; Lüftung
 [BackLUE]=AUTORANGE(1)
-IMAGE=[BackLUE],"SymboleV7/CardBacks/LUE.png",0,0,100%,100%
+IMAGE=[BackLUE],"SymboleV14/CardBacks/LUE.png",0,0,100%,100%
 [LUERange]=LABELRANGE([Slot/Stapel],@Lueftung)
 DUPLEX=[LUERange],[BackLUE]
 ; Abgabe
 [BackABG]=AUTORANGE(1)
-IMAGE=[BackABG],"SymboleV7/CardBacks/ABG.png",0,0,100%,100%
+IMAGE=[BackABG],"SymboleV14/CardBacks/ABG.png",0,0,100%,100%
 [ABGRange]=LABELRANGE([Slot/Stapel],@Abgabe)
 DUPLEX=[ABGRange],[BackABG]
 ; Zufriedenheit
 [BackZUF]=AUTORANGE(1)
-IMAGE=[BackZUF],"SymboleV7/CardBacks/ZUF.png",0,0,100%,100%
+IMAGE=[BackZUF],"SymboleV14/CardBacks/ZUF.png",0,0,100%,100%
 [EXDBGRange]=LABELRANGE([Slot/Stapel],@Zufriedenheit)
 DUPLEX=[EXDBGRange],[BackZUF]
 ; Dachnutzung
 [BackDN]=AUTORANGE(1)
-IMAGE=[BackDN],"SymboleV7/CardBacks/DN.png",0,0,100%,100%
+IMAGE=[BackDN],"SymboleV14/CardBacks/DN.png",0,0,100%,100%
 [DNRange]=LABELRANGE([Slot/Stapel],@Dachnutzung)
 DUPLEX=[DNRange],[BackDN]
 ; Flexibilität
 [BackLS]=AUTORANGE(1)
-IMAGE=[BackLS],"SymboleV7/CardBacks/LS.png",0,0,100%,100%
+IMAGE=[BackLS],"SymboleV14/CardBacks/LS.png",0,0,100%,100%
 [LSRange]=LABELRANGE([Slot/Stapel],@*Flexibilitaet)
 DUPLEX=[LSRange],[BackLS]
 ; Wärmeerzeugung
 [BackERZ]=AUTORANGE(1)
-IMAGE=[BackERZ],"SymboleV7/CardBacks/ERZ.png",0,0,100%,100%
+IMAGE=[BackERZ],"SymboleV14/CardBacks/ERZ.png",0,0,100%,100%
 [ERZRange]=LABELRANGE([Slot/Stapel],@Waermeerzeugung)
 DUPLEX=[ERZRange],[BackERZ]
 ; Effizienz
 [BackEL]=AUTORANGE(1)
-IMAGE=[BackEL],"SymboleV7/CardBacks/EL.png",0,0,100%,100%
+IMAGE=[BackEL],"SymboleV14/CardBacks/EL.png",0,0,100%,100%
 [ELRange]=LABELRANGE([Slot/Stapel],@*Effizienz)
 DUPLEX=[ELRange],[BackEL]
 
 
 PRINT=DUPLEX
-SAVEPDF="MassnahmenV12.pdf"
+SAVEPDF="MassnahmenV14.pdf"
 
 ;;;;;;;;;; SETUP
 ; Konstanten
@@ -92,7 +92,7 @@ FONT=Arial,6,IT,#
 [WhenThenSubfieldPaddingX]=0.2
 [WhenThenSubfieldPaddingY]=0.05
 [WhenThenArrowHeight]=0.5
-[HtmlImgSize]=0.5
+[HtmlImgSize]=0.8
 ; Height * Prozentsatz, jeweils 27% für die 3 inneren Boxen und jeweils 4,75% für die Spacings drüber und drunter
 [WhenThenPercentMargin]=0.0475
 [WhenThenPercentHeight]=0.27
@@ -170,8 +170,10 @@ FONT=Arial,6,IT,#
 ; HTML Konstanten
 ; Font für Namensbox
 HTMLFONT=Name,"Arial",10,B,#,left
+HTMLFONT=EffektText,"Arial",12,B,#,right
 HTMLFONT=Voraussetzung,"Arial",10,,#,left
 HTMLMARGINS=Voraussetzung,0,0,0,0,center
+HTMLMARGINS=EffektText,0,0,0,0,center
 HTMLFONT=Untertitel,"Arial",7,,#,left
 HTMLFONT=Beschreibung,"Arial",7,I,#,left
 HTMLMARGINS=Name,0,0,0,0,top
@@ -187,31 +189,26 @@ HTMLKEY=[AllCards],"Ã¶","&ouml;"
 HTMLKEY=[AllCards],"Ã¼","&uuml;"
 HTMLKEY=[AllCards],"ÃŸ","&szlig;"
 ; Unsere Symbole (an der Mittellinie ausgerichtet und case-sensitive Ersetzung)
-HTMLIMAGE=[AllCards],WP,"SymboleV7/Effekte/Waermepumpe.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],BI,"SymboleV7/Effekte/Biomasse.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],FW,"SymboleV7/Effekte/Fernwaerme.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],GG,"SymboleV7/Effekte/GruenesGas.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],WP,"SymboleV14/Effekte/WP.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],BI,"SymboleV14/Effekte/Bio.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],FW,"SymboleV14/Effekte/FW.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],GG,"SymboleV14/Effekte/GG.png",[HtmlImgSize],[HtmlImgSize],MPC
 
-HTMLIMAGE=[AllCards],WS,"SymboleV7/Effekte/Waermeschutz.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],EF,"SymboleV7/Effekte/Effizienz.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],SP,"SymboleV7/Effekte/Strom.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],S+,"SymboleV7/Effekte/Stecker-.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],S-,"SymboleV7/Effekte/Stecker+.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],SV,"SymboleV7/Effekte/Verbrauch.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],FL,"SymboleV7/Effekte/Flexi.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],ZU,"SymboleV7/Effekte/Zufriedenheit.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],DAW,"SymboleV7/Typen/Daemmung.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],DOGD,"SymboleV7/Typen/DOGD.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],DUGD,"SymboleV7/Typen/DUGD.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],FE,"SymboleV7/Typen/Fenster.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],DTUE,"SymboleV7/Typen/DTUE.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],LUE,"SymboleV7/Typen/Lueftung.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],ERZ,"SymboleV7/Typen/Waermeerzeugung.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],DN,"SymboleV7/Typen/Dachnutzung.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],ABG,"SymboleV7/Typen/Abgabe.png",[HtmlImgSize],[HtmlImgSize],MPC
-HTMLIMAGE=[AllCards],$M$,"SymboleV7/Effekte/Geld.png",[HtmlImgSize],[HtmlImgSize],MP
-HTMLIMAGE=[AllCards],$VP$,"SymboleV7/Effekte/VP.png",[HtmlImgSize],[HtmlImgSize],MP
-HTMLIMAGE=[AllCards],SO,"SymboleV7/Typen/SO.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],EN,"SymboleV14/Effekte/BauEm.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],BM,"SymboleV14/Effekte/Bedarf.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],SP,"SymboleV14/Effekte/Prod.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],FL,"SymboleV14/Effekte/Speicher.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],WS,"SymboleV14/Effekte/WS.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],EF,"SymboleV14/Effekte/Effizienz.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],ZU,"SymboleV14/Effekte/Zufriedenheit.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],DAW,"SymboleV14/Typen/Daemmung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],FE,"SymboleV14/Typen/Fenster.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],LUE,"SymboleV14/Typen/Lueftung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],ERZ,"SymboleV14/Typen/Waermeerzeugung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],DN,"SymboleV14/Typen/Dachnutzung.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],ABG,"SymboleV14/Typen/Abgabe.png",[HtmlImgSize],[HtmlImgSize],MPC
+HTMLIMAGE=[AllCards],$M$,"SymboleV14/Effekte/Geld.png",[HtmlImgSize],[HtmlImgSize],MP
+HTMLIMAGE=[AllCards],$VP$,"SymboleV14/Effekte/CO2.png",[HtmlImgSize],[HtmlImgSize],MP
 
 
 ;;;;; SETZUNG DER KARTEN
@@ -227,7 +224,7 @@ ROUNDRECT=[ERZRange],<CardBox>,#,#f08e9d,[BorderBoxSize]*2
 ROUNDRECT=[ELRange],<CardBox>,#,#9aa8cb,[BorderBoxSize]*2
 
 ; Slot Symbol
-[SymbolPfad]=JOIN("SymboleV7/Typen/",REPLACE([Slot/Stapel],"*",""),".png")
+[SymbolPfad]=JOIN("SymboleV14/Typen/",REPLACE([Slot/Stapel],"*",""),".png")
 
 ; TEXT=[AllCards],"Kartenslot",<AreaIcon_Title>,center,top
 IMAGE=[AllCards],[SymbolPfad],<AreaIcon_Field1Main>,0,T
@@ -238,24 +235,22 @@ IMAGE=[AllCards],[SymbolPfad],<AreaIcon_Field1Main>,0,T
 ;ENDIF
 
 ; Effekte Icons
-ICON=[AllCards],FW,"SymboleV7/Effekte/Fernwaerme.png"
-ICON=[AllCards],BI,"SymboleV7/Effekte/Biomasse.png"
-ICON=[AllCards],WP,"SymboleV7/Effekte/Waermepumpe.png"
-ICON=[AllCards],GG,"SymboleV7/Effekte/GruenesGas.png"
-ICON=[AllCards],EN,"SymboleV7/Effekte/BauEm.png"
-ICON=[AllCards],EM,"SymboleV7/Effekte/BauEmGespart.png"
-ICON=[AllCards],BM,"SymboleV7/Effekte/Stecker+.png"
-ICON=[AllCards],BP,"SymboleV7/Effekte/Stecker-.png"
-ICON=[AllCards],SP,"SymboleV7/Effekte/Strom.png"
-ICON=[AllCards],FL,"SymboleV7/Effekte/Flexi.png"
-ICON=[AllCards],WS,"SymboleV7/Effekte/Waermeschutz.png"
-ICON=[AllCards],EF,"SymboleV7/Effekte/Effizienz.png"
-ICON=[AllCards],ZU,"SymboleV7/Effekte/Zufriedenheit.png"
-ICON=[AllCards],ZM,"SymboleV7/Effekte/ZufriedenheitUn.png"
+ICON=[AllCards],FW,"SymboleV14/Effekte/FW.png"
+ICON=[AllCards],BI,"SymboleV14/Effekte/Bio.png"
+ICON=[AllCards],WP,"SymboleV14/Effekte/WP.png"
+ICON=[AllCards],GG,"SymboleV14/Effekte/GG.png"
+ICON=[AllCards],EN,"SymboleV14/Effekte/BauEm.png"
+ICON=[AllCards],BM,"SymboleV14/Effekte/Bedarf.png"
+ICON=[AllCards],SP,"SymboleV14/Effekte/Prod.png"
+ICON=[AllCards],FL,"SymboleV14/Effekte/Speicher.png"
+ICON=[AllCards],WS,"SymboleV14/Effekte/WS.png"
+ICON=[AllCards],EF,"SymboleV14/Effekte/Effizienz.png"
+ICON=[AllCards],ZU,"SymboleV14/Effekte/Zufriedenheit.png"
 ;ICON=[AllCards],WP,"SymboleV7/Effekte/SteckerWP.png"
-IF=LENGTH([EffektParsed])>0
+IF=LENGTH([EffektLine])>0
 ; TEXT=[AllCards],"Permanente Effekte",<EffectTitleField>,right,top
-ICONS=[AllCards],[EffektParsed],<EffectField>,[EffectSize],[EffectSize],0,T,right,center,100,2,[EffectOverlap]
+;ICONS=[AllCards],[EffektLine],<EffectField>,[EffectSize],[EffectSize],0,T,right,center,100,2,[EffectOverlap]
+HTMLTEXT=[AllCards],[EffektLine],<EffectField>,#FFFFFF,0,FETM,100,EffektText
 ENDIF
 
 ; Namensbox
@@ -279,7 +274,7 @@ FONT=Arial,6,IT,#
 TEXT=[AllCards],"Bezahle",<ToPlayRightTitle>,right,top
 FONT=Arial,10,BT,#
 TEXT=[AllCards],[Kosten],<ToPlayRightSymbol,SL,0.3>,left,center
-IMAGE=[AllCards],"SymboleV7/Effekte/Geld.png",<ToPlayRightSymbol,SL,0>,0,TP
+IMAGE=[AllCards],"SymboleV14/Effekte/Geld.png",<ToPlayRightSymbol,SL,0>,0,TP
 ; TODOTODOTODO
 ; Voraussezung zusammensetzen aus "Voraussetzung Spalte", "Voraussetzung Wert", "Voraussetzung Wert NICHT"
 
@@ -300,7 +295,7 @@ ENDIF
 <SofortText>=<SofortCO2Inner,SL,0.4>
 IF=[SofortCO2]<>0
 ROUNDRECT=[AllCards],<SofortCO2>,#,[FarbeLight],0.04
-IMAGE=[AllCards],"SymboleV7/Effekte/VP.png",<SofortImage>,0,TP
+IMAGE=[AllCards],"SymboleV14/Effekte/CO2.png",<SofortImage>,0,TP
 FONT=Arial,10,BT,#
 TEXT=[AllCards],[SofortCO2],<SofortText>,center,center
 ENDIF
