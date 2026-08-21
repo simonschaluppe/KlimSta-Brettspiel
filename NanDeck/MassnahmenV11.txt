@@ -265,6 +265,8 @@ TEXT=[AllCards],"Um diese Karte zu spielen:",<ToPlayTitle,SL,0>,left,top
 ROUNDRECT=[AllCards],<ToPlayField>,#,[FarbeLight],0.04
 <ToPlayInner>=[BorderBoxSize]+[BorderBoxPadding]+[NameTextBoxPadding],6.69+[NameTextBoxPadding],[CardBoxWidth]-2*[BorderBoxPadding]-2*[NameTextBoxPadding],1.82-2*[NameTextBoxPadding]
 <ToPlayLeft>=<ToPlayInner,HL,75%%>
+FONT=Arial,8,TF,#
+TEXT=[AllCards],[Freitext],<ToPlayLeft>,left,wwcenter
 
 <ToPlayRight>=<ToPlayInner,HR,22%%>
 <ToPlayRightTitle>=<ToPlayRight,TS,[TitleHeight]>
@@ -278,15 +280,16 @@ IMAGE=[AllCards],"SymboleV14/Effekte/Geld.png",<ToPlayRightSymbol,SL,0>,0,TP
 ; TODOTODOTODO
 ; Voraussezung zusammensetzen aus "Voraussetzung Spalte", "Voraussetzung Wert", "Voraussetzung Wert NICHT"
 
-[VorText]=JOIN("Nur mit ",[Voraussetzung Wert])
-[VorNotText]=JOIN("Nicht mit ",[Voraussetzung Wert NICHT])
-IF=LENGTH([Voraussetzung Spalte])>0
-IF=LENGTH([Voraussetzung Wert])>0
-HTMLTEXT=[AllCards],[VorText],<ToPlayLeft>,[BilderTransparenzFarbe],0,ETMS,100,Voraussetzung
-ELSE
-HTMLTEXT=[AllCards],[VorNotText],<ToPlayLeft>,[BilderTransparenzFarbe],0,ETMS,100,Voraussetzung
-ENDIF
-ENDIF
+
+;[VorText]=JOIN("Nur mit ",[Voraussetzung Wert])
+;[VorNotText]=JOIN("Nicht mit ",[Voraussetzung Wert NICHT])
+;IF=LENGTH([Voraussetzung Spalte])>0
+;IF=LENGTH([Voraussetzung Wert])>0
+;HTMLTEXT=[AllCards],[VorText],<ToPlayLeft>,[BilderTransparenzFarbe],0,ETMS,100,Voraussetzung
+;ELSE
+;HTMLTEXT=[AllCards],[VorNotText],<ToPlayLeft>,[BilderTransparenzFarbe],0,ETMS,100,Voraussetzung
+;ENDIF
+;ENDIF
 <SofortCO2>=<NameBox,BR,1.5,1>
 <SofortCO2Inner>=<SofortCO2,CW,0.8>
 <Spacing>=<SofortCO2Inner,SL,0.1>
