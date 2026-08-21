@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 
@@ -130,6 +131,20 @@ def card_enrichment(games, elite_share=0.05):
     return result
 
 
+def card_elite_sensitivity(games, elite_shares=(0.01, 0.05, 0.10)):
+    """
+    Card enrichment for several elite cutoffs.
+    """
+    tables = []
+
+    for elite_share in elite_shares:
+        table = card_enrichment(games, elite_share=elite_share)
+        table["elite_share"] = elite_share
+        tables.append(table)
+
+    return pd.concat(tables, ignore_index=True)
+
+
 def card_vp_lift(games):
     """
     Association between playing a card and final VP.
@@ -139,6 +154,9 @@ def card_vp_lift(games):
     vp_lift =
         mean VP without card
         - mean VP with card
+
+    If a card occurs in all games or no games, VP lift cannot be estimated
+    and is returned as NaN.
     """
     cards = sorted({
         card
@@ -154,17 +172,42 @@ def card_vp_lift(games):
         vp_with = games.loc[has_card, "vp"]
         vp_without = games.loc[~has_card, "vp"]
 
+        n_with = len(vp_with)
+        n_without = len(vp_without)
+
+        mean_with = vp_with.mean() if n_with else np.nan
+        mean_without = vp_without.mean() if n_without else np.nan
+
+        if n_with and n_without:
+            lift = mean_without - mean_with
+        else:
+            lift = np.nan
+
+        # CI requires at least two observations in both groups
+        if n_with >= 2 and n_without >= 2:
+            se = np.sqrt(
+                vp_with.var(ddof=1) / n_with
+                + vp_without.var(ddof=1) / n_without
+            )
+
+            ci_low = lift - 1.96 * se
+            ci_high = lift + 1.96 * se
+        else:
+            ci_low = np.nan
+            ci_high = np.nan
+
         rows.append({
             "card": card,
-            "games_with_card": len(vp_with),
-            "games_without_card": len(vp_without),
-            "mean_vp_with": vp_with.mean(),
-            "mean_vp_without": vp_without.mean(),
-            "vp_lift": vp_without.mean() - vp_with.mean(),
+            "games_with_card": n_with,
+            "games_without_card": n_without,
+            "mean_vp_with": mean_with,
+            "mean_vp_without": mean_without,
+            "vp_lift": lift,
+            "vp_lift_ci_low": ci_low,
+            "vp_lift_ci_high": ci_high,
         })
 
     return pd.DataFrame(rows)
-
 
 def card_round_summary(plays):
     """
@@ -195,37 +238,50 @@ def card_round_summary(plays):
 
 def card_opportunity_summary(plays):
     """
-    How often was each card available and selected?
+    How often was each logical card available and selected?
 
-    Requires simulation with log_choices=True.
+    Repeated physical copies of the same card count as ONE opportunity
+    per decision.
 
     selection_rate =
-        times selected / times playable
-
-    If offered_cards was logged, offered counts are included as well.
+        decisions where selected / decisions where playable
     """
     if plays.empty:
         return pd.DataFrame(
             columns=[
                 "card",
-                "offered",
-                "playable",
+                "offered_opportunities",
+                "playable_opportunities",
                 "selected",
                 "selection_rate",
             ]
         )
 
+    decision_columns = [
+        column
+        for column in ["strategy", "rule", "game_id", "action"]
+        if column in plays.columns
+    ]
+
+    if "action" not in decision_columns:
+        decision_columns += [
+            column
+            for column in ["round", "turn"]
+            if column in plays.columns
+        ]
+
     playable = (
-        plays[["game_id", "action", "playable_cards"]]
+        plays[decision_columns + ["playable_cards"]]
         .explode("playable_cards")
-        .dropna()
+        .dropna(subset=["playable_cards"])
         .rename(columns={"playable_cards": "card"})
+        .drop_duplicates(decision_columns + ["card"])
     )
 
     playable_counts = (
         playable.groupby("card")
         .size()
-        .rename("playable")
+        .rename("playable_opportunities")
     )
 
     selected_counts = (
@@ -242,16 +298,17 @@ def card_opportunity_summary(plays):
 
     if "offered_cards" in plays.columns:
         offered = (
-            plays[["game_id", "action", "offered_cards"]]
+            plays[decision_columns + ["offered_cards"]]
             .explode("offered_cards")
-            .dropna()
+            .dropna(subset=["offered_cards"])
             .rename(columns={"offered_cards": "card"})
+            .drop_duplicates(decision_columns + ["card"])
         )
 
         offered_counts = (
             offered.groupby("card")
             .size()
-            .rename("offered")
+            .rename("offered_opportunities")
         )
 
         result = pd.concat(
@@ -260,11 +317,10 @@ def card_opportunity_summary(plays):
         ).fillna(0)
 
     result["selection_rate"] = (
-        result["selected"] / result["playable"]
+        result["selected"] / result["playable_opportunities"]
     )
 
     return result.reset_index()
-
 
 def card_strategy_summary(plays):
     """
@@ -297,34 +353,26 @@ def card_strategy_summary(plays):
     return result
 
 
-def add_card_names(table, game_data):
+def add_card_info(table, game_data):
     """
-    Add card name/category information from loaded game_data.
-
-    Works even though Count creates several physical copies with the same id.
+    Add stable card id, English label, category and copy count.
     """
-    cards = (
-        game_data["cards"]
-        if isinstance(game_data["cards"], pd.DataFrame)
-        else pd.DataFrame(game_data["cards"])
-    )
+    cards = pd.DataFrame(game_data["cards"])
 
-    columns = ["id"]
-
-    for column in [
-        "Name",
-        "Name EN",
-        "Title",
-        "Title EN",
-        "Slot/Stapel",
-    ]:
-        if column in cards.columns:
-            columns.append(column)
+    columns = [
+        column
+        for column in ["card_id", "label_en", "Slot/Stapel", "Count"]
+        if column in cards.columns
+    ]
 
     info = (
         cards[columns]
-        .drop_duplicates("id")
-        .rename(columns={"id": "card"})
+        .drop_duplicates("card_id")
+        .rename(columns={
+            "card_id": "card",
+            "Slot/Stapel": "category",
+            "Count": "copies",
+        })
     )
 
     return table.merge(info, on="card", how="left")
@@ -361,9 +409,188 @@ def card_analysis(games, plays=None, game_data=None, elite_share=0.05):
         )
 
     if game_data is not None:
-        result = add_card_names(result, game_data)
+        result = add_card_info(result, game_data)
 
     return result.sort_values(
         "enrichment",
         ascending=False,
     ).reset_index(drop=True)
+
+
+import matplotlib.pyplot as plt
+
+
+def plot_game_distributions(games):
+    """
+    Overview of final game-state distributions.
+    """
+    columns = [
+        ("embodied_emissions", "Embodied emissions"),
+        ("thermal_protection", "Thermal protection"),
+        ("electricity_demand", "Electricity demand"),
+        ("storage", "Storage"),
+        ("electricity_generation", "Electricity generation"),
+        ("satisfaction", "Satisfaction"),
+        ("budget", "Budget"),
+        ("vp", "Victory points"),
+    ]
+
+    columns = [(col, label) for col, label in columns if col in games.columns]
+
+    fig, axes = plt.subplots(
+        1,
+        len(columns),
+        figsize=(2.6 * len(columns), 3),
+        constrained_layout=True,
+    )
+
+    if len(columns) == 1:
+        axes = [axes]
+
+    for ax, (column, label) in zip(axes, columns):
+        ax.hist(games[column], bins="auto")
+        ax.set_title(label)
+        ax.set_ylabel("Games")
+
+    return fig, axes
+def plot_vp_distribution(games, elite_share=0.05):
+    """
+    Final VP distribution with the elite threshold marked.
+    Lower VP is better.
+    """
+    threshold = games["vp"].quantile(elite_share)
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+
+    ax.hist(games["vp"], bins=50)
+    ax.axvline(
+        threshold,
+        linestyle="--",
+        label=f"Best {elite_share:.0%}",
+    )
+
+    ax.set_xlabel("Victory points")
+    ax.set_ylabel("Games")
+    ax.set_title("Distribution of final victory points")
+    ax.legend()
+
+    return fig, ax
+
+def plot_state_vs_vp(games, variable="satisfaction"):
+    """
+    Mean VP by final state level.
+    Lower VP is better.
+    """
+    data = (
+        games.groupby(variable)["vp"]
+        .agg(["mean", "median", "count"])
+        .reset_index()
+    )
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+
+    ax.plot(
+        data[variable],
+        data["mean"],
+        marker="o",
+        label="Mean VP",
+    )
+
+    ax.plot(
+        data[variable],
+        data["median"],
+        marker="o",
+        linestyle="--",
+        label="Median VP",
+    )
+
+    ax.set_xlabel(variable.replace("_", " ").title())
+    ax.set_ylabel("Victory points")
+    ax.legend()
+
+    return fig, ax
+
+def plot_card_enrichment(card_results, label_column="label_en", min_occurrence=0.02):
+    """
+    Overall occurrence versus elite occurrence.
+
+    Cards above the diagonal are overrepresented in elite games.
+    """
+    data = card_results.loc[
+        card_results["occurrence"] >= min_occurrence
+    ].copy()
+
+    fig, ax = plt.subplots(figsize=(7, 6))
+
+    ax.scatter(
+        data["occurrence"],
+        data["elite_occurrence"],
+    )
+
+    limit = max(
+        data["occurrence"].max(),
+        data["elite_occurrence"].max(),
+    )
+
+    ax.plot([0, limit], [0, limit], linestyle="--")
+
+    for _, row in data.iterrows():
+        label = row.get(label_column, row["card"])
+        ax.annotate(
+            label,
+            (row["occurrence"], row["elite_occurrence"]),
+            fontsize=8,
+        )
+
+    ax.set_xlabel("Occurrence in all games")
+    ax.set_ylabel("Occurrence in elite games")
+    ax.set_title("Card occurrence in all vs. elite games")
+
+    return fig, ax
+
+
+def plot_card_vp_lift(card_results, label_column="label_en", top_n=20):
+    """
+    Strongest positive and negative VP associations.
+
+    Positive VP lift = better final VP in games containing the card.
+    """
+    data = (
+        card_results
+        .dropna(subset=["vp_lift"])
+        .sort_values("vp_lift")
+    )
+
+    if len(data) > top_n:
+        n_each = max(1, top_n // 2)
+        data = pd.concat([
+            data.head(n_each),
+            data.tail(n_each),
+        ]).drop_duplicates()
+
+    labels = [
+        row.get(label_column, row["card"])
+        for _, row in data.iterrows()
+    ]
+
+    xerr = np.vstack([
+        data["vp_lift"] - data["vp_lift_ci_low"],
+        data["vp_lift_ci_high"] - data["vp_lift"],
+    ])
+
+    fig, ax = plt.subplots(figsize=(8, max(4, 0.3 * len(data))))
+
+    ax.errorbar(
+        data["vp_lift"],
+        range(len(data)),
+        xerr=xerr,
+        fmt="o",
+    )
+
+    ax.axvline(0, linestyle="--")
+    ax.set_yticks(range(len(data)))
+    ax.set_yticklabels(labels)
+    ax.set_xlabel("VP lift (positive = better)")
+    ax.set_title("Association between card play and final VP")
+
+    return fig, ax
