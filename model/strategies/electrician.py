@@ -4,7 +4,7 @@ def choose_card(playable_cards, state, rng):
         return (
             4 * card["Stromproduktion"]
             + 3 * card["Stromspeicher"]
-            - 3 * card["Strombedarf"]
+            + abs(card["Strombedarf"])
             - 0.5 * card["Kosten"]
         )
 
