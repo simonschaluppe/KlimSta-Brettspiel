@@ -1,6 +1,6 @@
 CARDSIZE=6.3,8.8
 LINKMULTI="Count"
-LINK="Massnahmenv14.csv"
+LINK="../Versionen/brettspiel-sept-final/Massnahmenv15.csv"
 
 [AllCards]=AUTORANGE({(Name)})
 [FarbeLight]=#FFFFFF
@@ -61,7 +61,7 @@ DUPLEX=[ELRange],[BackEL]
 
 
 PRINT=DUPLEX
-SAVEPDF="MassnahmenV14.pdf"
+SAVEPDF="../Versionen/brettspiel-sept-final/MassnahmenV15.pdf"
 
 ;;;;;;;;;; SETUP
 ; Konstanten
@@ -236,7 +236,7 @@ IMAGE=[AllCards],[SymbolPfad],<AreaIcon_Field1Main>,0,T
 
 ; Effekte Icons
 ICON=[AllCards],FW,"SymboleV14/Effekte/FW.png"
-ICON=[AllCards],BI,"SymboleV14/Effekte/Bio.png"
+ICON=[AllCards],BIO,"SymboleV14/Effekte/Bio.png"
 ICON=[AllCards],WP,"SymboleV14/Effekte/WP.png"
 ICON=[AllCards],GG,"SymboleV14/Effekte/GG.png"
 ICON=[AllCards],EN,"SymboleV14/Effekte/BauEm.png"
@@ -250,7 +250,7 @@ ICON=[AllCards],ZU,"SymboleV14/Effekte/Zufriedenheit.png"
 IF=LENGTH([EffektLine])>0
 ; TEXT=[AllCards],"Permanente Effekte",<EffectTitleField>,right,top
 ;ICONS=[AllCards],[EffektLine],<EffectField>,[EffectSize],[EffectSize],0,T,right,center,100,2,[EffectOverlap]
-HTMLTEXT=[AllCards],[EffektLine],<EffectField>,#FFFFFF,0,FETM,100,EffektText
+HTMLTEXT=[AllCards],REPLACE([EffektLine],"\44\",""),<EffectField>,#FFFFFF,0,FETM,100,EffektText
 ENDIF
 
 ; Namensbox
