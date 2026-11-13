@@ -42,6 +42,9 @@ ul.task-list li input[type="checkbox"] {
 <script src="site_libs/bootstrap/bootstrap.min.js"></script>
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap-021c4d350c4dfd0afa9a704526275538.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="site_libs/quarto-contrib/glightbox/glightbox.min.js"></script>
+<link href="site_libs/quarto-contrib/glightbox/glightbox.min.css" rel="stylesheet">
+<link href="site_libs/quarto-contrib/glightbox/lightbox.css" rel="stylesheet">
 <script id="quarto-search-options" type="application/json">{
   "language": {
     "search-no-results-text": "No results",
@@ -148,7 +151,7 @@ Wie viel Klimaschutz steckt in neuen Fenstern, einer Wärmepumpe oder einer Phot
 <div class="fact-strip">
 <span>Ab 14 Jahren</span><span>Kooperativ</span><span>Ca. 60–120 Minuten</span><span>Für Schule, Lehre und Workshops</span>
 </div>
-<p><img src="assets/img/karten-banner.webp" class="hero-art img-fluid" alt="Originale farbcodierte Maßnahmenkarten von The Renovation Game."></p>
+<p><a href="assets/img/karten-banner.webp" class="lightbox" data-gallery="quarto-lightbox-gallery-1"><img src="assets/img/karten-banner.webp" class="hero-art img-fluid" alt="Originale farbcodierte Maßnahmenkarten von The Renovation Game."></a></p>
 <div class="action-grid">
 <p><a class="action violet" href="spielen.html"><strong>Spielen</strong><small>Aufbau, wichtigste Regeln und Wertung – auch auf dem Smartphone.</small></a> <a class="action blue" href="vorbereiten.html"><strong>Vorbereiten &amp; Drucken</strong><small>Spielmaterial, Download-Paket und Duplex-Druckanleitung.</small></a> <a class="action green" href="start.html"><strong>QR-Code für die Klasse</strong><small>Auf dem Beamer zeigen – direkt zur mobilen Spielanleitung.</small></a> <a class="action red" href="feedback.html"><strong>Feedback geben</strong><small>Hilf uns, das Spiel zu verbessern und den Lernnutzen zu untersuchen.</small></a></p>
 </div>
@@ -590,6 +593,38 @@ Wie viel Klimaschutz steckt in neuen Fenstern, einer Wärmepumpe oder einer Phot
 </div>
   </div>
 </footer>
+<script>var lightboxQuarto = GLightbox({"closeEffect":"zoom","descPosition":"bottom","loop":false,"openEffect":"zoom","selector":".lightbox"});
+(function() {
+  let previousOnload = window.onload;
+  window.onload = () => {
+    if (previousOnload) {
+      previousOnload();
+    }
+    lightboxQuarto.on('slide_before_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      const href = trigger.getAttribute('href');
+      if (href !== null) {
+        const imgEl = window.document.querySelector(`a[href="${href}"] img`);
+        if (imgEl !== null) {
+          const srcAttr = imgEl.getAttribute("src");
+          if (srcAttr && srcAttr.startsWith("data:")) {
+            slideConfig.href = srcAttr;
+          }
+        }
+      } 
+    });
+  
+    lightboxQuarto.on('slide_after_load', (data) => {
+      const { slideIndex, slideNode, slideConfig, player, trigger } = data;
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(slideNode);
+      }
+    });
+  
+  };
+  
+})();
+          </script>
 
 
 
