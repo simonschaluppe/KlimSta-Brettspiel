@@ -1,0 +1,22 @@
+---
+title: "Mitspielen – QR-Code"
+page-layout: full
+format:
+  html:
+    toc: false
+    title-block-banner: false
+---
+
+<div class="qr-view">
+  <div>
+    <div class="kicker">THE RENOVATION GAME</div>
+    <div class="qr-title">Jetzt gemeinsam spielen.</div>
+    <p>1. Kamera öffnen<br>2. QR-Code scannen<br>3. Regeln am Handy lesen</p>
+    <div class="qr-hint">Ab 14 Jahren · Kooperatives Brettspiel · KlimSta</div>
+    <p><a class="btn-game" href="spielen.html">Zur Spielanleitung</a></p>
+  </div>
+  <div>
+    <a href="spielen.html"><img class="qr-image" src="assets/img/qr-spielen.svg" alt="QR-Code zur mobilen Spielanleitung" /></a>
+    <p class="qr-url">https://simonschaluppe.github.io/KlimSta-Brettspiel/spielen.html</p>
+  </div>
+</div>

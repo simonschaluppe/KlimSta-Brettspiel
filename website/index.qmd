@@ -1,0 +1,37 @@
+---
+title: "The Renovation Game"
+subtitle: "Wie machen wir ein Haus klimafit?"
+page-layout: article
+---
+
+<div class="kicker">Kooperatives Serious Game · Klimafitte Stadtsanierung</div>
+
+<div class="hero-title">Vier Runden. Ein Gebäude. Viele Entscheidungen.</div>
+
+<p class="lead-intro">Wie viel Klimaschutz steckt in neuen Fenstern, einer Wärmepumpe oder einer Photovoltaikanlage? In <strong>The Renovation Game</strong> saniert ihr gemeinsam ein Haus, vergleicht Maßnahmen und versucht, über vier Runden möglichst wenig CO₂ zu verursachen.</p>
+
+<div class="fact-strip"><span>Ab 14 Jahren</span><span>Kooperativ</span><span>Ca. 60–120 Minuten</span><span>Für Schule, Lehre und Workshops</span></div>
+
+![](assets/img/karten-banner.webp){.hero-art fig-alt="Originale farbcodierte Maßnahmenkarten von The Renovation Game."}
+
+<div class="action-grid">
+  <a class="action violet" href="spielen.html"><strong>Spielen</strong><small>Aufbau, wichtigste Regeln und Wertung – auch auf dem Smartphone.</small></a>
+  <a class="action blue" href="vorbereiten.html"><strong>Vorbereiten &amp; Drucken</strong><small>Spielmaterial, Download-Paket und Duplex-Druckanleitung.</small></a>
+  <a class="action green" href="start.html"><strong>QR-Code für die Klasse</strong><small>Auf dem Beamer zeigen – direkt zur mobilen Spielanleitung.</small></a>
+  <a class="action red" href="feedback.html"><strong>Feedback geben</strong><small>Hilf uns, das Spiel zu verbessern und den Lernnutzen zu untersuchen.</small></a>
+</div>
+
+## Worum geht es?
+
+Ihr habt ein gemeinsames Budget und renoviert ein bestehendes Wohngebäude. Eure Karten verbessern etwa **Wärmeschutz**, **Heizsystem**, **Stromversorgung** oder **Wohnqualität**. Manche Maßnahmen benötigen zunächst Material und Geld, sparen danach aber über mehrere Runden Emissionen. Entscheidend ist, **wie die Maßnahmen zusammenwirken**.
+
+<div class="step-grid">
+  <div class="step"><span class="number">1</span><strong>12 Karten ziehen</strong>Maßnahmen gemeinsam ansehen.</div>
+  <div class="step"><span class="number">2</span><strong>Renovieren</strong>Voraussetzungen prüfen und bezahlen.</div>
+  <div class="step"><span class="number">3</span><strong>Haus werten</strong>Heizung, Strom und CO₂ berechnen.</div>
+  <div class="step"><span class="number">4</span><strong>Weiterplanen</strong>Budget nutzen, nächste Runde starten.</div>
+</div>
+
+<div class="note green"><strong>Ein gutes Ergebnis?</strong> Je niedriger die gesamten CO₂-Spielpunkte, desto besser. Als Orientierung dient ein Ergebnis unter 300 Punkten. Die Spielwerte sind vereinfacht und ersetzen keine reale Gebäudeplanung.</div>
+
+[Spielregeln öffnen](spielen.html){.btn-game} [Regelheft als PDF](assets/downloads/regelheft.pdf){.btn-game .alt}

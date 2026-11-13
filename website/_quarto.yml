@@ -1,0 +1,53 @@
+project:
+  type: website
+  output-dir: _site
+  resources:
+    - assets/downloads/**
+    - assets/img/**
+
+website:
+  title: "The Renovation Game"
+  site-url: https://simonschaluppe.github.io/KlimSta-Brettspiel/
+  description: "Kooperatives Brettspiel zur klimafitten Stadtsanierung – ab 14 Jahren. Spielanleitung, Druckvorlagen und Feedback."
+  favicon: assets/img/favicon.png
+  search: false
+  page-navigation: false
+  back-to-top-navigation: false
+  navbar:
+    background: light
+    foreground: dark
+    collapse: true
+    left:
+      - href: index.qmd
+        text: Start
+      - href: vorbereiten.qmd
+        text: Vorbereiten & Drucken
+      - href: spielen.qmd
+        text: Spielen
+      - href: ueber.qmd
+        text: Über das Spiel
+    right:
+      - href: feedback.qmd
+        text: Feedback geben
+  page-footer:
+    border: false
+    left: "KlimSta · FH Technikum Wien · gefördert von Stadt Wien (MA 23)"
+    right: "[Zum Projekt](ueber.qmd) · [Feedback](feedback.qmd)"
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: false
+    anchor-sections: false
+    smooth-scroll: true
+    link-external-newwindow: true
+    grid:
+      body-width: 980px
+      margin-width: 0px
+    title-block-banner: false
+    html-math-method: katex
+
+execute:
+  echo: false
+  warning: false

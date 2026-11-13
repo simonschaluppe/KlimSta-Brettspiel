@@ -1,0 +1,28 @@
+---
+title: "Feedback geben"
+subtitle: "Hilf uns, das Spiel und seine Lernwirkung zu untersuchen"
+---
+
+**Was hast du durch das Spiel gelernt?** Welche Maßnahmen waren überraschend, welche Regeln waren unklar, und was sollte verbessert werden?
+
+Die Rückmeldungen helfen bei der **Weiterentwicklung des Spiels**. Im Rahmen begleitender wissenschaftlicher Untersuchungen wird außerdem erforscht, ob und wie das Spiel das Verständnis von Gebäudesanierung, Energie- und CO₂-Zusammenhängen verbessert. Dazu können beispielsweise Fragen vor und nach einem Spiel eingesetzt werden.
+
+<div class="note warning"><strong>Feedbackformular noch nicht verlinkt.</strong> Die Adresse wird vor der Freischaltung ergänzt. Die Teilnahme ist freiwillig. Hinweise zu Datenerhebung, Verarbeitung, Aufbewahrung und Kontakt müssen vor der tatsächlichen Befragung beim Formular bereitgestellt werden.</div>
+
+<!-- REDAKTION: Die folgende Platzhalter-Box durch den echten Befragungslink ersetzen.
+Beispiel: [Zum Feedbackfragebogen](https://...){.btn-game}
+Nicht annehmen, dass Feedback anonym ist, bevor der Fragebogen datenschutzrechtlich geprüft wurde.
+Bei Minderjährigen ggf. zusätzliche Anforderungen nach Ethik-/Datenschutzkonzept berücksichtigen. -->
+
+## Was interessiert uns besonders?
+
+- Waren die Spielregeln verständlich und konntet ihr ohne Spielleitung starten?
+- Welche Maßnahmen und Zusammenhänge habt ihr neu kennengelernt?
+- Wie hilfreich waren Karten, Gebäudeplan und Wertungsbogen?
+- Welche Karten, Entscheidungen oder Regeln sollten wir überarbeiten?
+
+## Hinweis zur wissenschaftlichen Auswertung
+
+Ob und wie Befragungsdaten wissenschaftlich ausgewertet werden, ist in der Teilnehmendeninformation des tatsächlichen Fragebogens zu erläutern. Die Webseite selbst erhebt **keine** Befragungsantworten und ersetzt keine Einwilligungs- oder Datenschutzinformation.
+
+[Zurück zum Spielen](spielen.html){.btn-game .alt}
