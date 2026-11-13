@@ -1,0 +1,8 @@
+{
+  "strategy": "decarbonizer",
+  "n_games": 10000,
+  "seed": 42,
+  "rule": "random_draw",
+  "draw_n": 20,
+  "pass_probability": 0.05
+}

@@ -1,0 +1,12 @@
+{
+  "experiment": "random_30_pass_0.5",
+  "access_rule": "random_30",
+  "rule": "random_draw",
+  "draw_n": 30,
+  "category_count": 1,
+  "cards_per_category": 3,
+  "pass_probability": 0.5,
+  "n_games": 10000,
+  "seed": 42,
+  "log_choices": true
+}
